@@ -27,10 +27,15 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v6
 
+      - name: Prepare static artifact
+        run: |
+          mkdir -p dist
+          cp index.html README.md .nojekyll dist/
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: .
+          path: dist
 
       - name: Deploy to GitHub Pages
         id: deployment
