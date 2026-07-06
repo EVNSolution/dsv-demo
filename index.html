@@ -240,6 +240,8 @@
     const $ = (id) => document.getElementById(id);
     const CLEVER_SERVER = location.hostname === "localhost" || location.protocol === "file:" ? "http://localhost:3000" : "";
     const OPENFREEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+    const MAP_TEXT_FONT = ["Noto Sans Regular"];
+    const DEBUG_LOGS = location.hostname === "localhost" || location.protocol === "file:" || new URLSearchParams(location.search).has("debug");
 
     const vehicles = [
       {
@@ -289,7 +291,8 @@
     function latency() { return `${96 + Math.floor(Math.random() * 78)}ms`; }
     function logApi(method, url, payload, kind = "") {
       const entry = { at: now(), latency: latency(), kind: kind || "info", method, url, payload };
-      demoLogs.unshift(entry); demoLogs.length = Math.min(demoLogs.length, 160); console.debug("[Clever - DSV Demo]", entry);
+      demoLogs.unshift(entry); demoLogs.length = Math.min(demoLogs.length, 160);
+      if (DEBUG_LOGS) console.debug("[Clever - DSV Demo]", entry);
     }
     function selectedVehicle() { return vehicles.find((vehicle) => vehicle.id === state.selectedVehicleId) || vehicles[0]; }
     function selectedStop() { return selectedVehicle().stops[state.selectedStopNo - 1] || selectedVehicle().stops[0]; }
@@ -749,11 +752,11 @@
       state.map.addLayer({ id: "route-next", type: "line", source: "route-next", paint: { "line-color": "#0066cc", "line-width": 3, "line-opacity": .82 } });
       state.map.addLayer({ id: "route-done", type: "line", source: "route-done", paint: { "line-color": "#8e8e93", "line-width": 3, "line-opacity": .72 } });
       state.map.addLayer({ id: "stops", type: "circle", source: "stops", paint: { "circle-radius": ["case", ["get", "active"], 6, ["get", "selected"], 5, 3.5], "circle-color": ["case", ["get", "risk"], "#d92d20", ["get", "done"], "#8e8e93", ["get", "selected"], "#0066cc", "#ffffff"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } });
-      state.map.addLayer({ id: "stop-labels", type: "symbol", source: "stops", layout: { "text-field": ["get", "label"], "text-size": 10, "text-offset": [0, 1.25] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
+      state.map.addLayer({ id: "stop-labels", type: "symbol", source: "stops", layout: { "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-size": 10, "text-offset": [0, 1.25] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
       state.map.addLayer({ id: "dropoffs", type: "circle", source: "dropoffs", paint: { "circle-radius": ["case", ["get", "active"], 5, ["get", "selected"], 4, 2.8], "circle-color": "#f79009", "circle-stroke-color": "#1d1d1f", "circle-stroke-width": 1.5 } });
-      state.map.addLayer({ id: "dropoff-labels", type: "symbol", source: "dropoffs", layout: { "text-field": "정차", "text-size": 9, "text-offset": [0, -1.15] }, paint: { "text-color": "#9a5a00", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
+      state.map.addLayer({ id: "dropoff-labels", type: "symbol", source: "dropoffs", layout: { "text-field": "정차", "text-font": MAP_TEXT_FONT, "text-size": 9, "text-offset": [0, -1.15] }, paint: { "text-color": "#9a5a00", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
       state.map.addLayer({ id: "vehicles", type: "circle", source: "vehicles", paint: { "circle-radius": 7, "circle-color": "#1d1d1f", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
-      state.map.addLayer({ id: "vehicle-labels", type: "symbol", source: "vehicles", layout: { "text-field": ["get", "label"], "text-size": 12, "text-offset": [0, -1.8] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+      state.map.addLayer({ id: "vehicle-labels", type: "symbol", source: "vehicles", layout: { "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-size": 12, "text-offset": [0, -1.8] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
       ["vehicles", "stops", "dropoffs", "routes", "route-next", "route-done"].forEach((layer) => {
         state.map.on("mouseenter", layer, () => { state.map.getCanvas().style.cursor = "pointer"; });
         state.map.on("mouseleave", layer, () => { state.map.getCanvas().style.cursor = ""; });
@@ -765,7 +768,7 @@
     }
     function initMap() {
       if (!globalThis.maplibregl) { logApi("GET", OPENFREEMAP_STYLE, { connected: false, reason: "maplibre script unavailable" }, "risk"); return; }
-      state.map = new maplibregl.Map({ container: "map", style: OPENFREEMAP_STYLE, center: [126.99, 37.53], zoom: 11.25, pitch: 0, bearing: 0, attributionControl: true });
+      state.map = new maplibregl.Map({ container: "map", style: OPENFREEMAP_STYLE, center: [126.99, 37.53], zoom: 11.25, pitch: 0, bearing: 0, attributionControl: true, fadeDuration: 0 });
       state.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
       state.map.on("load", () => { hideBusStops(); softenBoulevards(); enhance2dBuildings(); addMapLayers(); renderSide(); hydrateRoutes(); logApi("GET", OPENFREEMAP_STYLE, { connected: true, vehicles: 3, stops: 36, hiddenBasePoi: "bus", building2d: true, whiteBoulevards: true }); });
       state.map.on("error", (event) => logApi("MAP", "OpenFreeMap", { error: event?.error?.message || "map error" }, "risk"));
