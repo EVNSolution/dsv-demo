@@ -503,8 +503,10 @@
       document.querySelectorAll("[data-work-stop]").forEach((row) => row.addEventListener("click", () => {
         state.selectedVehicleId = row.dataset.workVehicle;
         state.selectedStopNo = Number(row.dataset.workStop);
+        const coord = selectedVehicle().stops[state.selectedStopNo - 1]?.coord;
         updateMapData();
         renderWorkPage();
+        if (coord) state.map?.easeTo({ center: coord, zoom: 15.8, duration: 550 });
       }));
       document.querySelectorAll("[data-work-action]").forEach((button) => button.addEventListener("click", () => {
         state.workAction = state.workAction === button.dataset.workAction ? "" : button.dataset.workAction;
@@ -744,10 +746,10 @@
       state.map.addLayer({ id: "routes", type: "line", source: "routes", paint: { "line-color": "#c7c7cc", "line-width": 2, "line-opacity": ["case", ["get", "selected"], .45, .18] } });
       state.map.addLayer({ id: "route-next", type: "line", source: "route-next", paint: { "line-color": "#0066cc", "line-width": 3, "line-opacity": .82 } });
       state.map.addLayer({ id: "route-done", type: "line", source: "route-done", paint: { "line-color": "#8e8e93", "line-width": 3, "line-opacity": .72 } });
+      state.map.addLayer({ id: "dropoffs", type: "circle", source: "dropoffs", minzoom: 15.5, paint: { "circle-radius": ["case", ["get", "active"], 5, ["get", "selected"], 4, 2.8], "circle-color": "#f79009", "circle-stroke-color": "#1d1d1f", "circle-stroke-width": 1.5 } });
+      state.map.addLayer({ id: "dropoff-labels", type: "symbol", source: "dropoffs", minzoom: 15.5, layout: { "text-field": "정차", "text-font": MAP_TEXT_FONT, "text-size": 9, "text-offset": [0, -1.15] }, paint: { "text-color": "#9a5a00", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
       state.map.addLayer({ id: "stops", type: "circle", source: "stops", paint: { "circle-radius": ["case", ["get", "active"], 6, ["get", "selected"], 5, 3.5], "circle-color": ["case", ["get", "risk"], "#d92d20", ["get", "done"], "#8e8e93", ["get", "selected"], "#0066cc", "#ffffff"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } });
       state.map.addLayer({ id: "stop-labels", type: "symbol", source: "stops", layout: { "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-size": 10, "text-offset": [0, 1.25] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
-      state.map.addLayer({ id: "dropoffs", type: "circle", source: "dropoffs", paint: { "circle-radius": ["case", ["get", "active"], 5, ["get", "selected"], 4, 2.8], "circle-color": "#f79009", "circle-stroke-color": "#1d1d1f", "circle-stroke-width": 1.5 } });
-      state.map.addLayer({ id: "dropoff-labels", type: "symbol", source: "dropoffs", layout: { "text-field": "정차", "text-font": MAP_TEXT_FONT, "text-size": 9, "text-offset": [0, -1.15] }, paint: { "text-color": "#9a5a00", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
       state.map.addLayer({ id: "vehicles", type: "circle", source: "vehicles", paint: { "circle-radius": 7, "circle-color": "#1d1d1f", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
       state.map.addLayer({ id: "vehicle-labels", type: "symbol", source: "vehicles", layout: { "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-size": 12, "text-offset": [0, -1.8] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
       ["vehicles", "stops", "dropoffs", "routes", "route-next", "route-done"].forEach((layer) => {
