@@ -366,6 +366,10 @@
     const DEFAULT_DWELL_MINUTES = 5;
     const TEMP_RISK_DELAY_MS = 10 * 1000;
     const TEMP_RISK_DURATION_MS = 3 * 60 * 1000;
+    const TEMP_GRAPH_WINDOW_MS = 60 * 60 * 1000;
+    const TEMP_GRAPH_STEP_MS = 30 * 1000;
+    const STOP_TEMP_RISE_MS = 90 * 1000;
+    const STOP_TEMP_FALL_MS = 90 * 1000;
     const TIME_SCALES = [0, .2, .4, .6, .8, 1, 4, 8, 12, 16, 20];
     const SPEED_WORDS = ["정지", "저속", "저속", "완만", "보통", "표준", "4x", "8x", "12x", "16x", "20x"];
     const medicalCargo = ["백신 바이알", "인슐린 펜", "항암 주사제", "혈액응고검사 시약", "검체 운송 튜브", "수액 세트", "냉장 항생제", "진단키트", "멸균 주사기", "처방 의약품 박스", "임상시험 검체", "온도기록계 동봉"];
@@ -430,9 +434,19 @@
     }
     function recordTempSample(vehicle, atMs, temp, risk, phase) {
       vehicle.tempSamples ||= [];
-      vehicle.tempSamples.push({ at: atMs, temp, risk, phase });
-      const cutoff = atMs - 75 * 60 * 1000;
-      vehicle.tempSamples = vehicle.tempSamples.filter((sample) => sample.at >= cutoff).slice(-180);
+      const bucket = Math.floor(atMs / TEMP_GRAPH_STEP_MS) * TEMP_GRAPH_STEP_MS;
+      const sample = { at: atMs, bucket, temp: Number(temp.toFixed(1)), risk: !!risk, phase };
+      const last = vehicle.tempSamples.at(-1);
+      if (last?.bucket === bucket) {
+        // Keep one realistic telemetry point per graph bucket. If a bucket contains a spike,
+        // preserve the highest/risk point so the 1:30 rise/fall shape stays visible.
+        const keepSpike = sample.risk || Number(sample.temp) >= Number(last.temp);
+        Object.assign(last, keepSpike ? sample : { at: atMs, bucket, phase: sample.phase });
+      } else {
+        vehicle.tempSamples.push(sample);
+      }
+      const cutoff = atMs - TEMP_GRAPH_WINDOW_MS - 15 * 60 * 1000;
+      vehicle.tempSamples = vehicle.tempSamples.filter((entry) => entry.at >= cutoff).slice(-180);
     }
     function recordTempEvent(vehicle, status, atMs) {
       vehicle.tempEvents ||= [];
@@ -449,42 +463,149 @@
       if (vehicle.tempEvents?.[0]?.status === "resolved") return `<span class="chip green">해결됨</span>`;
       return `<span class="chip mini">정상</span>`;
     }
-    function arrivalEventsFor(vehicle, nowMs = simulatedNowMs()) {
-      const actual = vehicle.arrivalEvents || [];
-      if (actual.length) return actual;
-      return vehicle.stops.slice(0, vehicle.done).map((stop, i, arr) => ({
-        at: nowMs - (arr.length - i) * 18 * 60 * 1000,
-        stopNo: stop.no,
-        stopName: stop.name,
-        synthetic: true
-      }));
+    function uniqueArrivalEvents(events) {
+      const byStop = new Map();
+      events.filter((event) => event && Number.isFinite(event.at) && event.stopNo > 0).forEach((event) => {
+        const prev = byStop.get(event.stopNo);
+        if (!prev || !prev.synthetic || event.synthetic === false || event.at > prev.at) byStop.set(event.stopNo, event);
+      });
+      return Array.from(byStop.values()).sort((a, b) => a.at - b.at);
+    }
+    function inferredArrivalEvents(vehicle, nowMs = simulatedNowMs()) {
+      const actual = (vehicle.arrivalEvents || []).map((event) => ({ ...event, synthetic: false }));
+      let anchorStopIndex = -1;
+      let anchorAt = 0;
+      const latestActual = actual.slice().sort((a, b) => b.at - a.at)[0];
+      if (latestActual) {
+        anchorStopIndex = latestActual.stopNo - 1;
+        anchorAt = latestActual.at;
+      } else if (vehicle.completed) {
+        anchorStopIndex = vehicle.stops.length - 1;
+        anchorAt = nowMs - Math.min(12 * 60 * 1000, stopDwellMs() * 2);
+      } else if (vehicle.done > 0 && vehicle.arrivedAt) {
+        anchorStopIndex = vehicle.done - 1;
+        anchorAt = vehicle.arrivedAt;
+      } else if (vehicle.done > 0) {
+        const stops = stopMeters(vehicle);
+        const previousStopIndex = vehicle.done - 1;
+        const currentLegIndex = Math.min(vehicle.done, vehicle.stops.length - 1);
+        const previousMeter = stops[previousStopIndex] || 0;
+        const targetMeter = stops[currentLegIndex] || routeStats(routeOf(vehicle)).total;
+        const legLength = Math.max(1, targetMeter - previousMeter);
+        const progress = Math.max(0, Math.min(1, ((vehicle.meters || 0) - previousMeter) / legLength));
+        anchorStopIndex = previousStopIndex;
+        anchorAt = nowMs - legDurationSeconds(vehicle, currentLegIndex) * 1000 * progress - stopDwellMs();
+      }
+      const inferred = [];
+      if (anchorStopIndex >= 0) {
+        let at = anchorAt;
+        for (let i = anchorStopIndex; i >= 0; i -= 1) {
+          if (at < nowMs - TEMP_GRAPH_WINDOW_MS - stopDwellMs()) break;
+          inferred.push({ at, stopNo: i + 1, stopName: vehicle.stops[i]?.name || `배송지 ${i + 1}`, synthetic: true });
+          at -= stopDwellMs() + legDurationSeconds(vehicle, i) * 1000;
+        }
+      }
+      return uniqueArrivalEvents([...inferred, ...actual]).filter((event) => event.at <= nowMs && event.at >= nowMs - TEMP_GRAPH_WINDOW_MS - stopDwellMs());
+    }
+    function arrivalEventsFor(vehicle, nowMs = simulatedNowMs()) { return inferredArrivalEvents(vehicle, nowMs); }
+    function tempSeed(vehicle) {
+      return Array.from(vehicle.id).reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+    }
+    function stableDriveTemp(vehicle, atMs) {
+      const seed = tempSeed(vehicle);
+      const base = vehicle.baseTemp || vehicle.temp || 4.8;
+      const bucket = Math.floor(atMs / TEMP_GRAPH_STEP_MS);
+      return base + Math.sin((bucket + seed) * .37) * .05 + Math.cos((bucket + seed) * .11) * .025;
+    }
+    function stopTempProfile(vehicle, atMs, event) {
+      const elapsed = atMs - event.at;
+      const dwellMs = stopDwellMs();
+      if (elapsed < 0 || elapsed > dwellMs) return null;
+      const seed = tempSeed(vehicle) + event.stopNo;
+      const startLift = .14 + (seed % 4) * .025;
+      const peakLift = .72 + (seed % 6) * .07;
+      let lift = startLift;
+      let phase = "stop-settle";
+      if (elapsed <= STOP_TEMP_RISE_MS) {
+        const t = elapsed / STOP_TEMP_RISE_MS;
+        lift = startLift + (peakLift - startLift) * t;
+        phase = "stop-temperature-rise";
+      } else if (elapsed <= STOP_TEMP_RISE_MS + STOP_TEMP_FALL_MS) {
+        const t = (elapsed - STOP_TEMP_RISE_MS) / STOP_TEMP_FALL_MS;
+        lift = startLift + (peakLift - startLift) * (1 - t);
+        phase = "stop-temperature-fall";
+      } else {
+        const t = (elapsed - STOP_TEMP_RISE_MS - STOP_TEMP_FALL_MS) / Math.max(1, dwellMs - STOP_TEMP_RISE_MS - STOP_TEMP_FALL_MS);
+        lift = Math.max(.02, startLift * (1 - t));
+      }
+      return { lift, phase };
+    }
+    function riskTemperature(baseTemp, elapsed) {
+      const clamped = Math.max(0, Math.min(TEMP_RISK_DURATION_MS, elapsed));
+      const mid = TEMP_RISK_DURATION_MS / 2;
+      const wave = clamped <= mid ? clamped / mid : 1 - (clamped - mid) / mid;
+      return 8.4 + wave * 2.4 + Math.max(0, baseTemp - 5) * .08;
+    }
+    function normalTemperatureSample(vehicle, atMs, events = arrivalEventsFor(vehicle, atMs)) {
+      let temp = stableDriveTemp(vehicle, atMs);
+      let phase = "drive-stable";
+      const activeStop = events.find((event) => atMs >= event.at && atMs <= event.at + stopDwellMs());
+      if (activeStop) {
+        const profile = stopTempProfile(vehicle, atMs, activeStop);
+        if (profile) {
+          temp += profile.lift;
+          phase = profile.phase;
+        }
+      }
+      return { temp: Number(temp.toFixed(1)), risk: false, phase };
+    }
+    function temperatureSampleForVehicle(vehicle, time) {
+      const normal = normalTemperatureSample(vehicle, time);
+      if (vehicle.id !== state.riskVehicleId) return normal;
+      const baseTemp = vehicle.baseTemp || 4.8;
+      if (state.forcedRisk) {
+        const startedAt = state.forcedRiskStartedAt || time;
+        const elapsed = time - startedAt;
+        if (elapsed < TEMP_RISK_DURATION_MS) return { temp: Number(riskTemperature(baseTemp, elapsed).toFixed(1)), risk: true, phase: elapsed <= TEMP_RISK_DURATION_MS / 2 ? "manual-temperature-rise" : "manual-temperature-fall" };
+        state.forcedRisk = false; state.forcedRiskStartedAt = 0;
+      }
+      const sinceArrival = vehicle.arrivedAt ? time - vehicle.arrivedAt : -1;
+      const riskElapsed = sinceArrival - TEMP_RISK_DELAY_MS;
+      const active = riskElapsed >= 0 && riskElapsed < TEMP_RISK_DURATION_MS;
+      if (!active) return normal;
+      return { temp: Number(riskTemperature(baseTemp, riskElapsed).toFixed(1)), risk: true, phase: riskElapsed <= TEMP_RISK_DURATION_MS / 2 ? "arrival-temperature-rise" : "arrival-temperature-fall" };
     }
     function tempTimeline(vehicle) {
       const nowMs = simulatedNowMs();
-      const startMs = nowMs - 60 * 60 * 1000;
-      const sampleByMinute = new Map();
+      const startMs = nowMs - TEMP_GRAPH_WINDOW_MS;
+      const events = arrivalEventsFor(vehicle, nowMs);
+      const sampleByBucket = new Map();
       (vehicle.tempSamples || []).forEach((sample) => {
-        if (sample.at >= startMs && sample.at <= nowMs) sampleByMinute.set(Math.round((sample.at - startMs) / 60000), sample);
+        const bucket = Math.floor(sample.at / TEMP_GRAPH_STEP_MS) * TEMP_GRAPH_STEP_MS;
+        if (sample.at >= startMs && sample.at <= nowMs) sampleByBucket.set(bucket, sample);
       });
-      return Array.from({ length: 61 }, (_, minute) => {
-        const actual = sampleByMinute.get(minute);
-        const base = vehicle.baseTemp || vehicle.temp || 4.8;
-        const temp = actual?.temp ?? base + Math.sin((minute + vehicle.id.length) * .58) * .18 + ((minute % 9) - 4) * .015;
-        return { minute, at: startMs + minute * 60000, temp: Number(temp.toFixed(1)), risk: !!actual?.risk };
+      const steps = Math.round(TEMP_GRAPH_WINDOW_MS / TEMP_GRAPH_STEP_MS);
+      return Array.from({ length: steps + 1 }, (_, index) => {
+        const at = startMs + index * TEMP_GRAPH_STEP_MS;
+        const bucket = Math.floor(at / TEMP_GRAPH_STEP_MS) * TEMP_GRAPH_STEP_MS;
+        const actual = sampleByBucket.get(bucket);
+        const generated = actual || normalTemperatureSample(vehicle, at, events);
+        return { minute: (at - startMs) / 60000, at, temp: Number(generated.temp.toFixed(1)), risk: !!generated.risk, phase: generated.phase };
       });
     }
     function temperatureGraph(vehicle) {
       const width = 320, height = 172, padX = 24, top = 18, graphH = 98, graphW = width - padX * 2;
-      const nowMs = simulatedNowMs(), startMs = nowMs - 60 * 60 * 1000, minTemp = 2, maxTemp = 11.5;
+      const nowMs = simulatedNowMs(), startMs = nowMs - TEMP_GRAPH_WINDOW_MS, minTemp = 2, maxTemp = 11.5;
       const y = (temp) => top + (maxTemp - temp) / (maxTemp - minTemp) * graphH;
       const x = (minute) => padX + minute / 60 * graphW;
       const points = tempTimeline(vehicle);
       const path = points.map((point, i) => `${i ? "L" : "M"}${x(point.minute).toFixed(1)} ${y(point.temp).toFixed(1)}`).join(" ");
       const ticks = Array.from({ length: 7 }, (_, i) => i * 10);
-      const blocks = arrivalEventsFor(vehicle, nowMs).filter((event) => event.at >= startMs - 10 * 60 * 1000 && event.at <= nowMs).map((event) => {
+      const blocks = arrivalEventsFor(vehicle, nowMs).filter((event) => event.at + stopDwellMs() >= startMs && event.at <= nowMs).map((event) => {
         const blockStart = Math.max(0, (event.at - startMs) / 60000);
-        const blockWidth = graphW / 6;
-        return `<rect x="${x(blockStart).toFixed(1)}" y="${top}" width="${blockWidth.toFixed(1)}" height="${graphH}" rx="8" fill="#fff7e8" stroke="#f79009" stroke-opacity=".35"/><text x="${Math.min(width - 78, x(blockStart) + 6).toFixed(1)}" y="${top + 15}" fill="#9a5a00" font-size="10" font-weight="800">정차</text>`;
+        const blockEnd = Math.min(60, (event.at + stopDwellMs() - startMs) / 60000);
+        const blockWidth = Math.max(1.5, x(blockEnd) - x(blockStart));
+        return `<rect x="${x(blockStart).toFixed(1)}" y="${top}" width="${blockWidth.toFixed(1)}" height="${graphH}" rx="6" fill="#fff7e8" stroke="#f79009" stroke-opacity=".35"/><text x="${Math.min(width - 78, x(blockStart) + 6).toFixed(1)}" y="${top + 15}" fill="#9a5a00" font-size="10" font-weight="800">정차 5분</text>`;
       }).join("");
       return `<svg class="temp-graph" viewBox="0 0 ${width} ${height}" role="img" aria-label="최근 1시간 온도 그래프">
         <rect x="0" y="0" width="${width}" height="${height}" rx="18" fill="#fafafa"/>
@@ -492,9 +613,9 @@
         ${blocks}
         <line x1="${padX}" y1="${y(8).toFixed(1)}" x2="${width - padX}" y2="${y(8).toFixed(1)}" stroke="#d92d20" stroke-dasharray="4 4" stroke-opacity=".65"/>
         <path d="${path}" fill="none" stroke="#1d1d1f" stroke-width="1.8"/>
-        ${points.map((point) => `<circle cx="${x(point.minute).toFixed(1)}" cy="${y(point.temp).toFixed(1)}" r="${point.risk || point.temp >= 8 ? 2.2 : 1.25}" fill="${point.risk || point.temp >= 8 ? "#d92d20" : "#1d1d1f"}"/>`).join("")}
+        ${points.map((point) => `<circle cx="${x(point.minute).toFixed(1)}" cy="${y(point.temp).toFixed(1)}" r="${point.risk || point.temp >= 8 ? 2.2 : 1.15}" fill="${point.risk || point.temp >= 8 ? "#d92d20" : "#1d1d1f"}"/>`).join("")}
         <text x="${padX}" y="14" fill="#6e6e73" font-size="10" font-weight="800">℃</text>
-        <text x="${width - padX}" y="14" text-anchor="end" fill="#6e6e73" font-size="10" font-weight="800">1분 포인트 / 10분 눈금</text>
+        <text x="${width - padX}" y="14" text-anchor="end" fill="#6e6e73" font-size="10" font-weight="800">30초 포인트 / 정차 5분</text>
       </svg>`;
     }
     function temperatureEventLog(vehicle) {
@@ -520,7 +641,7 @@
     function temperaturePanel(vehicle) {
       const events = arrivalEventsFor(vehicle).slice(-3).reverse();
       return `<div class="expansion-title"><span>온도 변화 그래프</span>${latestTempStatus(vehicle)}</div>
-        <div class="axis-note"><span>현재 기준 최근 1시간</span><span>도착 이벤트는 10분 블럭</span></div>
+        <div class="axis-note"><span>현재 기준 최근 1시간</span><span>정차 5분 · 1분30초 상승/하강</span></div>
         ${temperatureGraph(vehicle)}
         <div class="event-log">
           ${events.map((event) => `<div class="log-row"><i>도</i><div><b>${safeText(event.stopName)} 도착</b><span>${timeLabel(event.at)} · 정차 구간 주의</span></div></div>`).join("")}
@@ -1349,22 +1470,6 @@
       updateMapData();
       if (render) renderSide();
     }
-    function temperatureSample(time) {
-      const vehicle = riskVehicle();
-      const baseTemp = vehicle.baseTemp || 4.8;
-      if (state.forcedRisk) {
-        const startedAt = state.forcedRiskStartedAt || time;
-        const elapsed = time - startedAt;
-        if (elapsed < TEMP_RISK_DURATION_MS) return { temp: Math.max(vehicle.temp || baseTemp, 8.4 + Math.min(1, elapsed / TEMP_RISK_DURATION_MS) * 2.2), risk: true, phase: "manual-temperature-rise" };
-        state.forcedRisk = false; state.forcedRiskStartedAt = 0;
-      }
-      const sinceArrival = vehicle.arrivedAt ? time - vehicle.arrivedAt : -1;
-      const riskElapsed = sinceArrival - TEMP_RISK_DELAY_MS;
-      const active = riskElapsed >= 0 && riskElapsed < TEMP_RISK_DURATION_MS;
-      if (!active) return { temp: baseTemp, risk: false, phase: sinceArrival >= 0 && sinceArrival < TEMP_RISK_DELAY_MS ? "arrival-wait" : "normal" };
-      const progress = Math.min(1, riskElapsed / TEMP_RISK_DURATION_MS);
-      return { temp: 8.4 + progress * 2.6, risk: true, phase: "arrival-temperature-rise" };
-    }
     function sampleAt(time) {
       const elapsed = Math.max(0, (time - state.simStartedAt) / 1000);
       return {
@@ -1382,16 +1487,25 @@
       const riskSource = riskVehicle();
       batch.forEach((sample) => {
         const sampleMs = Date.parse(sample.at);
-        vehicles.forEach((vehicle) => updateVehicleDistance(vehicle, sampleMs));
-        const temperature = temperatureSample(sampleMs);
-        sample.temp = Number(temperature.temp.toFixed(1));
-        sample.risk = temperature.risk;
-        sample.temperaturePhase = temperature.phase;
+        const vehicleTemperatures = [];
+        vehicles.forEach((vehicle) => {
+          updateVehicleDistance(vehicle, sampleMs);
+          const temperature = temperatureSampleForVehicle(vehicle, sampleMs);
+          vehicle.temp = temperature.temp;
+          recordTempSample(vehicle, sampleMs, temperature.temp, temperature.risk, temperature.phase);
+          vehicleTemperatures.push({ vehicle: vehicle.id, plate: vehicle.plate, temp: temperature.temp, risk: temperature.risk, phase: temperature.phase });
+          if (vehicle.id === riskSource.id) {
+            sample.temp = temperature.temp;
+            sample.risk = temperature.risk;
+            sample.temperaturePhase = temperature.phase;
+          }
+        });
+        sample.vehicles = vehicleTemperatures;
       });
       const step = batch.at(-1);
       state.lastSampleAt = Date.parse(step.at);
-      riskSource.eta = step.eta; riskSource.temp = step.temp;
-      recordTempSample(riskSource, state.lastSampleAt, step.temp, step.risk, step.temperaturePhase);
+      riskSource.eta = step.eta;
+      riskSource.temp = step.temp;
       // Simulation keeps wall-clock ETA text for detail cards, but vehicle-list ETA uses live remaining seconds.
       // Fast demo levels can run at 50ms real intervals; map data updates every batch, while the
       // side panel only patches text/classes so list nodes and click handlers are not recreated.
