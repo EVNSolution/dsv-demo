@@ -954,11 +954,54 @@
       setPageMode(true);
       return renderControlPage();
     }
-    function renderLivePanels(force = false) {
+    function updateChipClass(chip, vehicle) {
+      chip.className = `chip ${vehicle.risk ? "risk" : vehicle.id === state.selectedVehicleId ? "green" : ""}`.trim();
+    }
+    function patchLiveControlPanel() {
       if (state.activeTab !== "control") return;
-      const nowMs = performance.now();
-      if (!force && nowMs - state.lastPanelRenderAt < 250) return;
-      renderSide();
+      const fleet = $("fleetList");
+      const destinationList = $("destinationList");
+      if (!fleet || !destinationList) return;
+
+      vehicles.forEach((vehicle) => {
+        const row = fleet.querySelector(`[data-vehicle="${vehicle.id}"]`);
+        if (!row) return;
+        row.classList.toggle("active", vehicle.id === state.selectedVehicleId);
+        row.classList.toggle("risk", !!vehicle.risk);
+        const meta = row.querySelector(".row-meta");
+        if (meta) meta.textContent = vehicleMetaText(vehicle);
+        const chip = row.querySelector(".chip");
+        if (chip) {
+          updateChipClass(chip, vehicle);
+          chip.textContent = etaText(vehicle);
+        }
+      });
+
+      const vehicle = selectedVehicle();
+      const etaList = stopEtaList(vehicle);
+      const destinationChip = $("destinationChip");
+      if (destinationChip) destinationChip.textContent = `${vehicle.stops.length}개 배송지`;
+      const destinationSummary = $("destinationSummary");
+      if (destinationSummary) destinationSummary.textContent = vehicleMotionText(vehicle);
+
+      vehicle.stops.forEach((stop) => {
+        const row = destinationList.querySelector(`[data-stop="${stop.no}"]`);
+        if (!row) return;
+        const done = stop.no <= vehicle.done;
+        const active = stop.no === state.selectedStopNo;
+        const risk = stop.no === riskStopNo(vehicle);
+        row.classList.toggle("done", done);
+        row.classList.toggle("now", !done && active);
+        row.classList.toggle("active", active);
+        row.classList.toggle("risk", risk);
+        const value = row.querySelector("b");
+        if (value) value.textContent = etaList[stop.no - 1];
+      });
+    }
+    function renderLivePanels() {
+      // Telemetry ticks must not rebuild side-panel HTML. Rebuilding destroyed row DOM/events at every
+      // GPS update, which looked like list refresh and made rows hard to select at high demo speeds.
+      patchLiveControlPanel();
     }
 
     async function fetchOsrmRoute(vehicle) {
@@ -1246,8 +1289,8 @@
       riskSource.eta = step.eta; riskSource.temp = step.temp;
       recordTempSample(riskSource, state.lastSampleAt, step.temp, step.risk, step.temperaturePhase);
       // Simulation keeps wall-clock ETA text for detail cards, but vehicle-list ETA uses live remaining seconds.
-      // Fast demo levels can run at 50ms real intervals; map data updates every batch, while panel DOM is throttled
-      // so vehicle selection remains clickable even at the highest time-scale.
+      // Fast demo levels can run at 50ms real intervals; map data updates every batch, while the
+      // side panel only patches text/classes so list nodes and click handlers are not recreated.
       setRisk(!!step.risk, false);
       renderLivePanels();
       logApi("POST", `${CLEVER_SERVER}/demo/gps-temperature/batch`, { sampleIntervalSec: 0.5, batchIntervalSec: 1, realBatchIntervalMs: batchIntervalMs(), updateLevel: state.speedLevel, timeScale: timeScale(), count: batch.length, samples: batch }, step.risk ? "risk" : "");
@@ -1264,7 +1307,7 @@
       state.speedLevel = Number($("speedLevel").value);
       $("speedText").textContent = SPEED_WORDS[state.speedLevel] || `${state.speedLevel}단계`;
       restartTimer();
-      renderSide();
+      if (state.activeTab === "control") patchLiveControlPanel();
       if (log) logApi("PATCH", `${CLEVER_SERVER}/demo/simulation/update-level`, { level: state.speedLevel, timeScale: timeScale(), realBatchIntervalMs: batchIntervalMs() });
     }
     function triggerRiskNow() {
