@@ -568,7 +568,7 @@
     }
 
     function renderSettingsPage() {
-      renderPage("설정", "알림 기준을 임시로 조정합니다. 새로고침하면 기본값으로 돌아갑니다.", `
+      renderPage("설정", "운영 알림 기준을 조정합니다.", `
         <div class="page-grid">
           <section class="page-panel">
             <div class="tab-line"><span>알림 기준</span><span class="chip amber">임시 저장</span></div>
@@ -585,13 +585,6 @@
               <tr><th>온도 경고</th><td><label><input type="checkbox" checked> 관제 화면 표시</label></td></tr>
               <tr><th>배송 지연</th><td><label><input type="checkbox" checked> 배송원에게 전달</label></td></tr>
               <tr><th>증빙 누락</th><td><label><input type="checkbox" checked> 기록 페이지에 표시</label></td></tr>
-            </tbody></table>
-          </section>
-          <section class="page-panel wide">
-            <div class="tab-line"><span>안내</span><span class="chip mini">데모</span></div>
-            <table class="page-table"><tbody>
-              <tr><th>저장 방식</th><td>현재 화면에서만 유지됩니다.</td></tr>
-              <tr><th>초기화</th><td>새로고침하면 기본 하드코딩 값으로 돌아갑니다.</td></tr>
             </tbody></table>
           </section>
         </div>`);
