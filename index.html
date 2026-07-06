@@ -47,8 +47,9 @@
       position: absolute; left: 20px; top: 118px; transform: none; z-index: 6;
       width: 76px; padding: 8px 6px; display: grid; gap: 8px; align-content: start;
       border-radius: 24px; background: rgba(255,255,255,.82); border: 1px solid rgba(255,255,255,.72);
-      box-shadow: var(--shadow); backdrop-filter: blur(18px);
+      box-shadow: var(--shadow); backdrop-filter: blur(18px); transition: top .28s ease;
     }
+    body.risk-banner-active .left-tabs { top: 176px; }
     .main-tab {
       width: 64px; min-height: 52px; border: 0; border-radius: 18px; background: transparent; color: #1d1d1f;
       cursor: pointer; font-size: 15px; font-weight: 900; letter-spacing: -.04em;
@@ -90,13 +91,14 @@
     .maplibregl-control-container { font-family: inherit; }
     .maplibregl-ctrl-attrib { font-size: 11px; }
     .toast {
-      position: absolute; right: 400px; top: 22px; z-index: 4; width: min(390px, calc(100% - 48px)); padding: 16px; border-radius: 22px;
-      background: var(--risk-soft); border: 1px solid rgba(217,45,32,.28); color: var(--risk); box-shadow: 0 24px 60px rgba(217,45,32,.14);
+      position: absolute; left: 20px; right: 22px; top: 104px; z-index: 8; min-height: 48px;
+      display: flex; align-items: center; gap: 10px; padding: 0 18px; border-radius: 999px;
+      background: rgba(255,240,237,.96); border: 1px solid rgba(217,45,32,.30); color: var(--risk); box-shadow: 0 18px 42px rgba(217,45,32,.16);
       opacity: 0; transform: translateY(-10px); pointer-events: none; transition: opacity .28s ease, transform .28s ease;
     }
     .toast.show { opacity: 1; transform: translateY(0); }
-    .toast strong { display:block; margin-bottom: 4px; color: var(--risk); }
-    .toast span { color: #7f1d1d; font-size: 13px; line-height: 1.35; }
+    .toast-icon { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center; background: var(--risk); color: #fff; font-size: 14px; font-weight: 1000; line-height: 1; }
+    .toast-text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #7f1d1d; font-size: 14px; font-weight: 900; letter-spacing: -.03em; }
 
     .side { position: absolute; right: 22px; top: 22px; bottom: 22px; z-index: 4; width: min(370px, calc(100vw - 44px)); display: grid; gap: 14px; align-content: start; overflow: visible; padding: 0 0 0 4px; }
     .side .card { box-shadow: none; overflow: visible; }
@@ -208,7 +210,8 @@
       .left-tabs { left: 12px; right: 12px; top: 12px; bottom: auto; transform: none; width: auto; grid-auto-flow: column; grid-auto-columns: 70px; overflow-x: auto; }
       .top { position: fixed; left: 12px; right: 12px; top: 74px; transform: none; flex-wrap: wrap; }
       .map-card { position: relative; height: 62vh; min-height: 460px; }
-      .toast { right: 12px; top: 150px; }
+      .toast { left: 12px; right: 12px; top: 150px; }
+      body.risk-banner-active .left-tabs { top: 12px; }
       .side { position: relative; inset: auto; width: auto; margin: 14px 12px 20px; overflow: visible; }
       .left-expansion { position: static; width: auto; max-height: none; margin: 12px 0 0; }
       .page-content { position: relative; inset: auto; margin: 14px 12px 20px; padding: 20px; }
@@ -250,9 +253,9 @@
       <article class="card map-card" aria-label="실시간 차량 지도">
         <div class="map-wrap">
           <div id="map" aria-label="OpenFreeMap 서울 배송 지도"></div>
-          <div id="toast" class="toast" role="status" aria-live="polite">
-            <strong>온도 상승 경고</strong>
-            <span id="toastText">차량 특장 온도기록계가 기준 8℃를 초과했습니다. 차량 리스트에 위험 표기합니다.</span>
+          <div id="toast" class="toast" role="alert" aria-live="assertive">
+            <span class="toast-icon" aria-hidden="true">!</span>
+            <span id="toastText" class="toast-text">온도 상승 오류</span>
           </div>
         </div>
       </article>
@@ -1337,8 +1340,10 @@
       riskSource.risk = on;
       // TEMP_HIGH alert is intentionally bound to state.riskVehicleId.
       // If the demo risk target changes, this text follows that vehicle instead of a stale hardcoded name.
-      $("toastText").textContent = `${riskSource.plate} 정차 후 특장 온도기록계가 기준 8℃를 초과했습니다. 현재 ${Number(riskSource.temp || 0).toFixed(1)}℃, 온도 상승 시나리오가 3분간 지속됩니다.`;
+      // The 3-minute scenario duration is simulation logic only; the screen banner stays concise.
+      $("toastText").textContent = `온도 상승 오류 · ${riskSource.plate} · 특장 온도 ${Number(riskSource.temp || 0).toFixed(1)}℃ · 기준 8℃ 초과`;
       $("toast").classList.toggle("show", on);
+      document.body.classList.toggle("risk-banner-active", on);
       state.risk = on;
       if (wasRisk !== on) recordTempEvent(riskSource, on ? "risk" : "resolved", simulatedNowMs());
       updateMapData();
