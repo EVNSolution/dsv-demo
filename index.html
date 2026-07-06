@@ -346,7 +346,7 @@
       stops: ROUTE_TEMPLATES[vehicle.route].map(([name, coord], i) => ({ no: i + 1, name, coord }))
     }));
 
-    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, speedLevel: 5, dwellMinutes: 5, viewMode: "2d", activeTab: "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, workAction: "", uploadPreview: false, selectedRecordIndex: 0, riskVehicleId: "unload04", map: null, selectedVehicleId: "depart01", selectedStopNo: 1, routes: {}, dropoffs: {} };
+    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, speedLevel: 5, dwellMinutes: 5, viewMode: "2d", activeTab: "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, workAction: "", uploadPreview: false, selectedRecordIndex: 0, riskVehicleId: "unload04", map: null, selectedVehicleId: "depart01", selectedStopNo: 1, routes: {}, dropoffs: {}, routeLegs: {} };
     const demoLogs = [];
     const routeCache = new Map();
     window.demoLogs = demoLogs;
@@ -581,6 +581,27 @@
         return lastMeter;
       });
     }
+    function routeLegsOf(vehicle) { return state.routeLegs[vehicle.id] || []; }
+    function legMeters(vehicle, legIndex) {
+      const stops = stopMeters(vehicle);
+      const target = stops[legIndex] ?? routeStats(routeOf(vehicle)).total;
+      const previous = legIndex <= 0 ? 0 : (stops[legIndex - 1] || 0);
+      return Math.max(1, target - previous);
+    }
+    function legDurationSeconds(vehicle, legIndex) {
+      const osrmDuration = Number(routeLegsOf(vehicle)[legIndex]?.duration);
+      if (Number.isFinite(osrmDuration) && osrmDuration > 0) return osrmDuration;
+      return legMeters(vehicle, legIndex) / Math.max(0.1, vehicle.speedMps || 1);
+    }
+    function legSpeedMps(vehicle, legIndex) { return legMeters(vehicle, legIndex) / Math.max(1, legDurationSeconds(vehicle, legIndex)); }
+    function remainingLegSeconds(vehicle, legIndex = vehicle.done) {
+      const stops = stopMeters(vehicle);
+      const target = stops[legIndex] ?? routeStats(routeOf(vehicle)).total;
+      const previous = legIndex <= 0 ? 0 : (stops[legIndex - 1] || 0);
+      const legLength = Math.max(1, target - previous);
+      const completed = Math.max(0, Math.min(legLength, (vehicle.meters || 0) - previous));
+      return legDurationSeconds(vehicle, legIndex) * Math.max(0, 1 - completed / legLength);
+    }
     function applyVehicleScenario(vehicle, baseMs = Date.now()) {
       const meters = stopMeters(vehicle);
       const target = Math.max(1, Math.min(vehicle.targetStopNo || vehicle.stopNo || 1, vehicle.stops.length));
@@ -612,7 +633,7 @@
       }
       if (vehicle.scenario === "arrive-soon") {
         vehicle.done = target - 1;
-        vehicle.meters = Math.max(previousMeter, targetMeter - vehicle.speedMps * (vehicle.arriveInSec || 60));
+        vehicle.meters = Math.max(previousMeter, targetMeter - legSpeedMps(vehicle, target - 1) * (vehicle.arriveInSec || 60));
         return;
       }
       if (vehicle.scenario === "to-stop") {
@@ -633,7 +654,7 @@
       if (sampleAtMs < vehicle.waitUntil) return;
       if (vehicle.waitUntil && sampleAtMs >= vehicle.waitUntil) { vehicle.waitUntil = 0; vehicle.arrivedAt = 0; }
       if (timeScale() <= 0) return;
-      vehicle.meters += vehicle.speedMps * (SAMPLE_MS / 1000);
+      vehicle.meters += legSpeedMps(vehicle, Math.min(vehicle.done, vehicle.stops.length - 1)) * (SAMPLE_MS / 1000);
       const stops = stopMeters(vehicle);
       const arrived = stops.findIndex((m, i) => i + 1 > vehicle.done && vehicle.meters >= m);
       // Arrival signal: when the vehicle crosses the next stop meter, dwell for the configurable unloading time.
@@ -660,8 +681,7 @@
       if (departureLeft > 0) return formatDuration(departureLeft);
       const dwell = dwellRemainingMs(vehicle);
       if (dwell > 0) return formatDuration(dwell);
-      const target = stopMeters(vehicle)[Math.min(vehicle.done, vehicle.stops.length - 1)] || routeStats(routeOf(vehicle)).total;
-      const remainingSeconds = Math.max(0, Math.round((target - vehicle.meters) / vehicle.speedMps));
+      const remainingSeconds = Math.max(0, Math.round(remainingLegSeconds(vehicle, Math.min(vehicle.done, vehicle.stops.length - 1))));
       const minutes = Math.floor(remainingSeconds / 60);
       const seconds = remainingSeconds % 60;
       return minutes ? `${minutes}분 ${String(seconds).padStart(2, "0")}초` : `${seconds}초`;
@@ -677,9 +697,8 @@
       return stops.map((meters, i) => {
         if (i + 1 <= vehicle.done) return "완료";
         if (timeScale() <= 0) return "대기";
-        const previous = i === vehicle.done ? vehicle.meters : (i === 0 ? vehicle.meters : stops[i - 1]);
-        seconds += Math.max(0, (meters - previous) / vehicle.speedMps);
-        if (i + 1 > Math.max(vehicle.done + 1, 1)) seconds += stopDwellMs() / 1000;
+        if (i > vehicle.done) seconds += stopDwellMs() / 1000;
+        seconds += i === vehicle.done ? remainingLegSeconds(vehicle, i) : legDurationSeconds(vehicle, i);
         lastEtaMs = Math.max(lastEtaMs + 1000, baseMs + seconds * 1000);
         return new Date(lastEtaMs).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
       });
@@ -1081,17 +1100,18 @@
           const payload = await response.json();
           const route = payload.routes?.[0]?.geometry?.coordinates;
           const dropoffs = payload.waypoints?.slice(1).map((waypoint) => waypoint.location);
+          const legs = payload.routes?.[0]?.legs?.map((leg) => ({ distance: Number(leg.distance) || 0, duration: Number(leg.duration) || 0 })) || [];
           if (route?.length > 1) {
-            const result = { route, dropoffs: dropoffs?.length === vehicle.stops.length ? dropoffs : vehicle.stops.map((stop) => stop.coord) };
+            const result = { route, dropoffs: dropoffs?.length === vehicle.stops.length ? dropoffs : vehicle.stops.map((stop) => stop.coord), legs };
             routeCache.set(coords, result);
-            logApi("GET", url, { osrm: CLEVER_SERVER && url.startsWith(CLEVER_SERVER) ? "clever" : "public", origin: ORIGIN.name, vehicle: vehicle.id, points: route.length, dropoffs: result.dropoffs.length, meters: Math.round(routeStats(route).total) });
+            logApi("GET", url, { osrm: CLEVER_SERVER && url.startsWith(CLEVER_SERVER) ? "clever" : "public", origin: ORIGIN.name, vehicle: vehicle.id, points: route.length, dropoffs: result.dropoffs.length, meters: Math.round(routeStats(route).total), firstLegMinutes: legs[0]?.duration ? Number((legs[0].duration / 60).toFixed(1)) : null });
             return result;
           }
         } catch (error) {
           logApi("GET", url, { vehicle: vehicle.id, fallback: true, message: String(error.message || error) }, "pending");
         }
       }
-      const result = { route: [], dropoffs: vehicle.stops.map((stop) => stop.coord) };
+      const result = { route: [], dropoffs: vehicle.stops.map((stop) => stop.coord), legs: [] };
       routeCache.set(coords, result);
       logApi("GET", "OSRM", { vehicle: vehicle.id, routeLayer: "withheld", reason: "no-osrm-route" }, "pending");
       return result;
@@ -1103,10 +1123,11 @@
         return acc;
       }, {});
       await Promise.all(Object.values(groups).map(async ([vehicle, ...rest]) => {
-        const { route, dropoffs } = await fetchOsrmRoute(vehicle);
+        const { route, dropoffs, legs } = await fetchOsrmRoute(vehicle);
         [vehicle, ...rest].forEach((targetVehicle) => {
           state.routes[targetVehicle.id] = route;
           state.dropoffs[targetVehicle.id] = dropoffs;
+          state.routeLegs[targetVehicle.id] = legs || [];
           if (!state.running) applyVehicleScenario(targetVehicle, simulatedNowMs());
         });
         updateMapData();
