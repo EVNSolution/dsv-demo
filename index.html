@@ -282,7 +282,7 @@
       }
     ].map((vehicle) => ({ ...vehicle, stops: vehicle.stops.map(([name, coord], i) => ({ no: i + 1, name, coord })) }));
 
-    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, forcedRisk: false, risk: false, speedLevel: 5, viewMode: "2d", activeTab: "control", destinationCollapsed: false, workAction: "", uploadPreview: false, selectedRecordIndex: 0, riskVehicleId: "cj02", map: null, selectedVehicleId: "cj02", selectedStopNo: 2, routes: {}, dropoffs: {} };
+    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, forcedRisk: false, risk: false, speedLevel: 5, dwellMinutes: 5, viewMode: "2d", activeTab: "control", destinationCollapsed: false, workAction: "", uploadPreview: false, selectedRecordIndex: 0, riskVehicleId: "cj02", map: null, selectedVehicleId: "cj02", selectedStopNo: 2, routes: {}, dropoffs: {} };
     const demoLogs = [];
     window.demoLogs = demoLogs;
     const tabs = {
@@ -293,7 +293,7 @@
     };
     const SAMPLE_MS = 500;
     const BATCH_MS = 1000;
-    const STOP_DWELL_MS = 10 * 60 * 1000;
+    const DEFAULT_DWELL_MINUTES = 5;
     const TIME_SCALES = [0, .2, .4, .6, .8, 1, 4, 8, 12, 16, 20];
     const SPEED_WORDS = ["정지", "저속", "저속", "완만", "보통", "표준", "4x", "8x", "12x", "16x", "20x"];
     const medicalCargo = ["백신 바이알", "인슐린 펜", "항암 주사제", "혈액응고검사 시약", "검체 운송 튜브", "수액 세트", "냉장 항생제", "진단키트", "멸균 주사기", "처방 의약품 박스", "임상시험 검체", "온도기록계 동봉"];
@@ -308,6 +308,25 @@
     function selectedVehicle() { return vehicles.find((vehicle) => vehicle.id === state.selectedVehicleId) || vehicles[0]; }
     function timeScale() { return TIME_SCALES[state.speedLevel] ?? 1; }
     function batchIntervalMs() { return timeScale() <= 0 ? 0 : Math.max(50, Math.round(BATCH_MS / timeScale())); }
+    function stopDwellMs() { return Math.max(1, Number(state.dwellMinutes) || DEFAULT_DWELL_MINUTES) * 60 * 1000; }
+    function simulatedNowMs() {
+      if (state.lastSampleAt) return state.lastSampleAt;
+      if (state.simStartedAt) return state.simStartedAt + state.batchNo * BATCH_MS;
+      return Date.now();
+    }
+    function formatDuration(ms) {
+      const total = Math.max(0, Math.ceil(ms / 1000));
+      const minutes = Math.floor(total / 60);
+      const seconds = total % 60;
+      return `${minutes}:${String(seconds).padStart(2, "0")}`;
+    }
+    function dwellRemainingMs(vehicle) { return Math.max(0, (vehicle.waitUntil || 0) - simulatedNowMs()); }
+    function vehicleMotionText(vehicle) {
+      const dwell = dwellRemainingMs(vehicle);
+      if (dwell > 0) return `정차, 상품 하차 중 · ${formatDuration(dwell)}`;
+      const nextStop = vehicle.stops[Math.min(vehicle.done, vehicle.stops.length - 1)] || vehicle.stops.at(-1);
+      return `이동 중: ${nextStop.name}`;
+    }
     function selectedStop() { return selectedVehicle().stops[state.selectedStopNo - 1] || selectedVehicle().stops[0]; }
     function riskVehicle() { return vehicles.find((vehicle) => vehicle.id === state.riskVehicleId) || vehicles[0]; }
     function fc(features) { return { type: "FeatureCollection", features }; }
@@ -363,14 +382,16 @@
       vehicle.meters += vehicle.speedMps * (SAMPLE_MS / 1000);
       const stops = stopMeters(vehicle);
       const arrived = stops.findIndex((m, i) => i + 1 > vehicle.done && vehicle.meters >= m);
-      // Arrival signal: when the vehicle crosses the next stop meter, dwell for 10 demo minutes.
+      // Arrival signal: when the vehicle crosses the next stop meter, dwell for the configurable unloading time.
       // The vehicle-list pill and destination ETA list are recalculated from the new current stop after this signal.
-      if (arrived !== -1) { vehicle.done = arrived + 1; vehicle.waitUntil = sampleAtMs + STOP_DWELL_MS; vehicle.meters = stops[arrived]; }
+      if (arrived !== -1) { vehicle.done = arrived + 1; vehicle.waitUntil = sampleAtMs + stopDwellMs(); vehicle.meters = stops[arrived]; }
       vehicle.meters = Math.min(vehicle.meters, routeStats(routeOf(vehicle)).total);
     }
     function vehiclePosition(vehicle) { return pointAtMeters(routeOf(vehicle), vehicle.meters); }
     function etaText(vehicle) {
       if (timeScale() <= 0) return "정지";
+      const dwell = dwellRemainingMs(vehicle);
+      if (dwell > 0) return formatDuration(dwell);
       const target = stopMeters(vehicle)[Math.min(vehicle.done, vehicle.stops.length - 1)] || routeStats(routeOf(vehicle)).total;
       const remainingSeconds = Math.max(0, Math.round((target - vehicle.meters) / vehicle.speedMps));
       const minutes = Math.floor(remainingSeconds / 60);
@@ -378,14 +399,14 @@
       return minutes ? `${minutes}분 ${String(seconds).padStart(2, "0")}초` : `${seconds}초`;
     }
     function stopEtaList(vehicle) {
-      let seconds = 0;
+      let seconds = dwellRemainingMs(vehicle) / 1000;
       const stops = stopMeters(vehicle);
       return stops.map((meters, i) => {
         if (i + 1 <= vehicle.done) return "완료";
         if (timeScale() <= 0) return "대기";
         const previous = i === 0 ? vehicle.meters : stops[i - 1];
         seconds += Math.max(0, (meters - previous) / vehicle.speedMps);
-        if (i + 1 > Math.max(vehicle.done + 1, 1)) seconds += STOP_DWELL_MS / 1000;
+        if (i + 1 > Math.max(vehicle.done + 1, 1)) seconds += stopDwellMs() / 1000;
         const at = new Date(Date.now() + seconds * 1000);
         return at.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
       });
@@ -594,7 +615,7 @@
               <tr><th>특장 온도 상한</th><td><input class="setting-input" type="number" value="8" step="0.5"> ℃</td></tr>
               <tr><th>ETA 지연 알림</th><td><input class="setting-input" type="number" value="10"> 분 이상</td></tr>
               <tr><th>GPS 미수신 알림</th><td><input class="setting-input" type="number" value="30"> 초 이상</td></tr>
-              <tr><th>도착 후 대기시간</th><td><input class="setting-input" type="number" value="10"> 분</td></tr>
+              <tr><th>도착 후 대기시간</th><td><input class="setting-input" id="dwellMinutesInput" type="number" min="1" max="30" value="${state.dwellMinutes}"> 분</td></tr>
             </tbody></table>
           </section>
           <section class="page-panel">
@@ -606,15 +627,24 @@
             </tbody></table>
           </section>
         </div>`);
+      $("dwellMinutesInput")?.addEventListener("change", (event) => {
+        state.dwellMinutes = Math.max(1, Number(event.target.value) || DEFAULT_DWELL_MINUTES);
+        event.target.value = state.dwellMinutes;
+        logApi("PATCH", `${CLEVER_SERVER}/demo/settings`, { stopDwellMinutes: state.dwellMinutes });
+      });
     }
 
     function renderFleet() {
       $("fleetList").innerHTML = vehicles.map((vehicle) => `
         <div class="row ${vehicle.id === state.selectedVehicleId ? "active" : ""} ${vehicle.risk ? "risk" : ""}" data-vehicle="${vehicle.id}">
-          <div><div class="vehicle-line">${vehicle.plate}</div><div class="row-meta">이동 중: ${vehicle.stops[Math.min(vehicle.done, vehicle.stops.length - 1)]?.name || vehicle.stops.at(-1).name}</div></div>
-          <span class="chip ${vehicle.risk ? "risk" : vehicle.id === state.selectedVehicleId ? "green" : ""}">${vehicle.risk ? "위험" : etaText(vehicle)}</span>
+          <div><div class="vehicle-line">${vehicle.plate}</div><div class="row-meta">${vehicleMotionText(vehicle)}</div></div>
+          <span class="chip ${vehicle.risk ? "risk" : vehicle.id === state.selectedVehicleId ? "green" : ""}">${etaText(vehicle)}</span>
         </div>`).join("");
-      document.querySelectorAll("#fleetList [data-vehicle]").forEach((row) => row.addEventListener("click", () => selectVehicle(row.dataset.vehicle, null, false)));
+      document.querySelectorAll("#fleetList [data-vehicle]").forEach((row) => {
+        const pickVehicle = () => selectVehicle(row.dataset.vehicle, null, false);
+        row.addEventListener("pointerdown", pickVehicle);
+        row.addEventListener("click", () => { if (!window.PointerEvent) pickVehicle(); });
+      });
     }
     function renderCargo() {
       const vehicle = selectedVehicle();
@@ -625,17 +655,19 @@
     function renderStops() {
       const vehicle = selectedVehicle();
       $("destinationChip").textContent = `${vehicle.stops.length}개 배송지`;
-      $("destinationSummary").textContent = `${vehicle.plate.split(" ")[0]} 다음 배송지 ${vehicle.eta}`;
+      $("destinationSummary").textContent = vehicleMotionText(vehicle);
       const etaList = stopEtaList(vehicle);
-      $("destinationList").innerHTML = vehicle.stops.map((stop) => {
+      const destinationList = $("destinationList");
+      const scrollTop = destinationList.scrollTop;
+      destinationList.innerHTML = vehicle.stops.map((stop) => {
         const done = stop.no <= vehicle.done;
         const active = stop.no === state.selectedStopNo;
         const risk = vehicle.risk && stop.no === Math.max(vehicle.done + 1, 2);
         return `<div class="t ${done ? "done" : active ? "now" : ""} ${active ? "active" : ""} ${risk ? "risk" : ""}" data-stop="${stop.no}"><i>${stop.no}</i><span>${stop.name}</span><b>${etaList[stop.no - 1]}</b></div>`;
       }).join("");
       document.querySelectorAll("#destinationList [data-stop]").forEach((row) => row.addEventListener("click", () => selectDestination(Number(row.dataset.stop))));
+      destinationList.scrollTop = scrollTop;
       renderCargo();
-      $("destinationList").scrollTop = 0;
     }
     function toggleDestinations() {
       state.destinationCollapsed = !state.destinationCollapsed;
@@ -643,11 +675,18 @@
       $("destinationToggle").textContent = state.destinationCollapsed ? "펼치기" : "접기";
     }
     function renderSide() {
+      state.lastPanelRenderAt = performance.now();
       if (state.activeTab === "work") return renderWorkPage();
       if (state.activeTab === "issue") return renderIssuePage();
       if (state.activeTab === "settings") return renderSettingsPage();
       setPageMode(true);
       return renderControlPage();
+    }
+    function renderLivePanels(force = false) {
+      if (state.activeTab !== "control") return;
+      const nowMs = performance.now();
+      if (!force && nowMs - state.lastPanelRenderAt < 250) return;
+      renderSide();
     }
 
     async function fetchOsrmRoute(vehicle) {
@@ -861,13 +900,14 @@
       state.map.on("error", (event) => logApi("MAP", "OpenFreeMap", { error: event?.error?.message || "map error" }, "risk"));
     }
 
-    function setRisk(on) {
+    function setRisk(on, render = true) {
       const riskSource = riskVehicle(); riskSource.risk = on;
       // TEMP_HIGH alert is intentionally bound to state.riskVehicleId.
       // If the demo risk target changes, this text follows that vehicle instead of a stale hardcoded name.
       $("toastText").textContent = `${riskSource.plate} 특장 온도기록계가 기준 8℃를 초과했습니다. 차량 리스트에 위험 표기합니다.`;
       $("toast").classList.toggle("show", on);
-      updateMapData(); renderSide();
+      updateMapData();
+      if (render) renderSide();
     }
     function sampleAt(time) {
       const elapsed = Math.max(0, (time - state.simStartedAt) / 1000);
@@ -890,9 +930,13 @@
       const step = batch.at(-1);
       const riskSource = riskVehicle();
       batch.forEach((sample) => vehicles.forEach((vehicle) => updateVehicleDistance(vehicle, Date.parse(sample.at))));
+      state.lastSampleAt = Date.parse(step.at);
       riskSource.eta = step.eta; riskSource.temp = step.temp;
       // Simulation keeps wall-clock ETA text for detail cards, but vehicle-list ETA uses live remaining seconds.
-      setRisk(!!step.risk);
+      // Fast demo levels can run at 50ms real intervals; map data updates every batch, while panel DOM is throttled
+      // so vehicle selection remains clickable even at the highest time-scale.
+      setRisk(!!step.risk, false);
+      renderLivePanels();
       logApi("POST", `${CLEVER_SERVER}/demo/gps-temperature/batch`, { sampleIntervalSec: 0.5, batchIntervalSec: 1, realBatchIntervalMs: batchIntervalMs(), updateLevel: state.speedLevel, timeScale: timeScale(), count: batch.length, samples: batch }, step.risk ? "risk" : "");
       if (step.risk) logApi("POST", `${CLEVER_SERVER}/demo/alerts/evaluate`, { alert: "TEMP_HIGH", surfaced: ["toast", "vehicle", "fleet-list", "map-layer"] }, "risk");
     }
@@ -918,19 +962,19 @@
     }
     function start() {
       if (state.running) return triggerRiskNow();
-      state.running = true; state.forcedRisk = false; state.simStartedAt = Date.now(); state.batchNo = 0;
+      state.running = true; state.forcedRisk = false; state.simStartedAt = Date.now(); state.batchNo = 0; state.lastSampleAt = 0;
       $("startBtn").classList.remove("primary"); $("startBtn").classList.add("danger"); $("startBtn").textContent = "Error";
       logApi("POST", `${CLEVER_SERVER}/demo/simulation/start`, { scenario: "demo-1s-update-0.5s-samples", sampleIntervalSec: 0.5, batchIntervalSec: 1, realBatchIntervalMs: batchIntervalMs(), updateLevel: state.speedLevel, timeScale: timeScale() }, "pending");
       restartTimer();
     }
     function reset() {
-      clearInterval(state.timer); state.timer = null; state.running = false; state.forcedRisk = false; state.batchNo = 0; $("startBtn").classList.add("primary"); $("startBtn").classList.remove("danger"); $("startBtn").textContent = "Start Simulation";
+      clearInterval(state.timer); state.timer = null; state.running = false; state.forcedRisk = false; state.batchNo = 0; state.lastSampleAt = 0; $("startBtn").classList.add("primary"); $("startBtn").classList.remove("danger"); $("startBtn").textContent = "Start Simulation";
       state.destinationCollapsed = false;
       vehicles[0].meters = 0; vehicles[0].eta = "14:06"; vehicles[0].temp = 4.2; vehicles[0].done = 1; vehicles[0].risk = false; vehicles[0].waitUntil = 0;
       vehicles[1].meters = 900; vehicles[1].done = 2; vehicles[1].waitUntil = 0;
       vehicles[2].meters = 500; vehicles[2].done = 1; vehicles[2].waitUntil = 0;
       state.selectedVehicleId = "cj02"; state.selectedStopNo = 2;
-      setRisk(false); renderSide(); updateMapData();
+      setRisk(false, false); renderSide(); updateMapData();
     }
 
     document.querySelectorAll(".main-tab").forEach((button) => button.addEventListener("click", () => setTab(button.dataset.tab)));
