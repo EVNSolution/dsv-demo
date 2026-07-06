@@ -209,6 +209,28 @@
     .alert-dot { width: 18px; height: 18px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--risk); color: #fff; font-size: 12px; font-weight: 1000; line-height: 1; box-shadow: 0 0 0 3px var(--risk-soft); }
     .row-title { font-weight: 800; letter-spacing: -.02em; }
     .row-meta { color: var(--muted); font-size: 11px; margin-top: 0; }
+    .driver-card { margin-top: 12px; padding: 10px; display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: center; border: 1px solid var(--hairline); border-radius: 18px; background: rgba(255,255,255,.92); }
+    .driver-avatar { width: 46px; height: 46px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(145deg, #f2f2f7, #ffffff); color: #6e6e73; font-size: 27px; border: 1px solid #ececf1; }
+    .driver-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 1000; letter-spacing: -.03em; }
+    .driver-name small { color: var(--muted); font-size: 10px; font-weight: 900; white-space: nowrap; }
+    .driver-facts { margin-top: 4px; display: flex; gap: 5px; flex-wrap: wrap; color: var(--muted); font-size: 10px; font-weight: 900; }
+    .driver-facts span { min-height: 19px; display: inline-flex; align-items: center; border-radius: 999px; padding: 0 7px; background: #f5f5f7; }
+    .tracking-strip { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-top: 2px; padding: 7px 9px; border-radius: 13px; background: #f8fbff; color: var(--muted); font-size: 11px; font-weight: 900; }
+    .tracking-strip b { color: var(--blue); }
+    .tracking-dot { width: 7px; height: 7px; border-radius: 99px; display: inline-block; margin-right: 5px; background: var(--blue); box-shadow: 0 0 0 5px rgba(0,102,204,.12); }
+    .courier-grid { display:grid; grid-template-columns: minmax(280px, .9fr) 1.1fr; gap:16px; align-items:start; }
+    .courier-list { display:grid; gap:10px; }
+    .courier-card { border:1px solid var(--hairline); border-radius:20px; background:#fff; padding:12px; display:grid; grid-template-columns:48px 1fr auto; gap:10px; align-items:center; cursor:pointer; text-align:left; }
+    .courier-card.active { background: var(--blue-soft); border-color: rgba(0,102,204,.24); }
+    .courier-card strong { display:block; font-size:15px; letter-spacing:-.03em; }
+    .courier-card small { color:var(--muted); font-size:11px; font-weight:800; }
+    .courier-detail-head { display:grid; grid-template-columns:72px 1fr; gap:14px; align-items:center; }
+    .courier-detail-head .driver-avatar { width:72px; height:72px; border-radius:24px; font-size:42px; }
+    .trait-list { display:flex; gap:7px; flex-wrap:wrap; margin-top:10px; }
+    .trait-list span { padding:7px 9px; border-radius:999px; background:#f5f5f7; color:var(--muted); font-size:12px; font-weight:900; }
+    .assigned-list { display:grid; gap:8px; margin-top:14px; }
+    .assigned-row { border:1px solid var(--hairline); border-radius:16px; padding:10px; display:grid; grid-template-columns:1fr auto; gap:8px; background:#fff; cursor:pointer; }
+    .assigned-row.active { background:var(--blue-soft); border-color:rgba(0,102,204,.24); }
 
 
     .timeline { display:grid; gap: 10px; margin-top: 14px; }
@@ -254,6 +276,7 @@
   <main class="page">
     <nav class="left-tabs" aria-label="데모 탭">
       <button class="main-tab active" type="button" data-tab="control">관제</button>
+      <button class="main-tab" type="button" data-tab="couriers">배송원</button>
       <button class="main-tab" type="button" data-tab="work">업무</button>
       <button class="main-tab" type="button" data-tab="issue">기록</button>
       <button class="main-tab" type="button" data-tab="settings">설정</button>
@@ -316,6 +339,15 @@
       address: "부곡동 1231, 경기도 군포시 번영로 82 한국복합물류(주)",
       coord: [126.9372235, 37.3309480]
     };
+    const couriers = [
+      { id: "c01", name: "김도윤", avatar: "👤", age: 42, gender: "남성", career: "냉장 의약품 6년", zone: "강남·서초", score: "A+", traits: ["병원 하역장 숙련", "POD 누락 0건", "온도기록계 확인 빠름"] },
+      { id: "c02", name: "이서연", avatar: "👤", age: 36, gender: "여성", career: "검체 운송 4년", zone: "마포·영등포", score: "A", traits: ["검체 인수증 꼼꼼", "야간 배송 가능", "주차 동선 메모 우수"] },
+      { id: "c03", name: "박민재", avatar: "👤", age: 31, gender: "남성", career: "백신 배송 3년", zone: "송파·강동", score: "A", traits: ["대형병원 보안절차 숙지", "정차시간 준수", "냉장 박스 회수 빠름"] },
+      { id: "c04", name: "정하린", avatar: "👤", age: 45, gender: "여성", career: "의약품 물류 8년", zone: "종로·중구", score: "S", traits: ["VIP 병원 담당", "분실사고 0건", "거래명세표 확인 강점"] },
+      { id: "c05", name: "최유준", avatar: "👤", age: 29, gender: "남성", career: "상온/냉장 복합 2년", zone: "수원·동탄", score: "B+", traits: ["장거리 루트 적응", "상차 검수 빠름", "긴급 콜 대응"] },
+      { id: "c06", name: "오지민", avatar: "👤", age: 39, gender: "여성", career: "임상시험 검체 5년", zone: "강북·서대문", score: "A+", traits: ["연구실 직접 인계", "온도 이탈 보고 빠름", "담당자 연락망 풍부"] },
+      { id: "c07", name: "한태오", avatar: "👤", age: 34, gender: "남성", career: "응급 배송 4년", zone: "서울 전역", score: "A", traits: ["대체 경로 판단 빠름", "교통 지연 보고", "새벽 배송 가능"] },
+    ];
     const ROUTE_TEMPLATES = {
       west: [
         ["서울월드컵경기장", [126.897236, 37.568248]], ["DMC 누리꿈스퀘어", [126.889083, 37.579630]], ["홍대입구역", [126.923708, 37.557192]],
@@ -349,19 +381,19 @@
       ]
     };
     const scenarioDefinitions = [
-      { id: "load01", plate: "11바 1201", route: "gangnam", temp: 4.6, scenario: "loading-hold", scenarioLabel: "상차 중 · 출발 대기" },
-      { id: "load02", plate: "12바 2302", route: "west", temp: 4.4, scenario: "loading-hold", scenarioLabel: "상차 중 · 검수 대기" },
-      { id: "load03", plate: "13사 3403", route: "songpa", temp: 4.7, scenario: "loading-hold", scenarioLabel: "상차 중 · 온도기록계 확인" },
-      { id: "load04", plate: "14자 4504", route: "central", temp: 4.5, scenario: "loading-hold", scenarioLabel: "상차 중 · 출고 지시 대기" },
-      { id: "load05", plate: "15바 5605", route: "south", temp: 4.8, scenario: "loading-delay", startDelayMs: 3 * 60 * 1000, scenarioLabel: "상차 중 · 3분 뒤 출발" },
-      { id: "depart01", plate: "21사 6101", route: "gangnam", temp: 4.8, scenario: "depart-now", scenarioLabel: "0초 출발" },
-      { id: "to02", plate: "22자 6202", route: "west", temp: 4.9, scenario: "to-stop", targetStopNo: 2, progress: .46, scenarioLabel: "2번 배송지 이동" },
-      { id: "to10", plate: "23바 6303", route: "songpa", temp: 5.0, scenario: "to-stop", targetStopNo: 10, progress: .18, scenarioLabel: "10번 배송지 이동" },
-      { id: "final12", plate: "24사 6404", route: "central", temp: 4.7, scenario: "arrive-soon", targetStopNo: 12, arriveInSec: 60, completeOnNextArrival: true, scenarioLabel: "12번 1분 뒤 도착 후 종료" },
-      { id: "unload04", plate: "31자 7104", route: "gangnam", temp: 4.6, scenario: "unloading", stopNo: 4, arrivedAgoMs: 0, remainingDwellMs: 5 * 60 * 1000, scenarioLabel: "정차 · 상품 하차 중" },
-      { id: "delay07", plate: "32바 7207", route: "south", temp: 5.2, scenario: "to-stop", targetStopNo: 7, progress: .31, scenarioLabel: "교통 지연 · 7번 이동" },
-      { id: "proof11", plate: "33사 7311", route: "central", temp: 4.9, scenario: "to-stop", targetStopNo: 11, progress: .18, scenarioLabel: "증빙 확인 필요 · 11번 이동" },
-      { id: "complete12", plate: "34자 7412", route: "songpa", temp: 4.5, scenario: "completed", scenarioLabel: "배송 완료 · 운행 종료" },
+      { id: "load01", plate: "11바 1201", route: "gangnam", courierId: "c01", temp: 4.6, scenario: "loading-hold", scenarioLabel: "상차 중 · 출발 대기" },
+      { id: "load02", plate: "12바 2302", route: "west", courierId: "c02", temp: 4.4, scenario: "loading-hold", scenarioLabel: "상차 중 · 검수 대기" },
+      { id: "load03", plate: "13사 3403", route: "songpa", courierId: "c03", temp: 4.7, scenario: "loading-hold", scenarioLabel: "상차 중 · 온도기록계 확인" },
+      { id: "load04", plate: "14자 4504", route: "central", courierId: "c04", temp: 4.5, scenario: "loading-hold", scenarioLabel: "상차 중 · 출고 지시 대기" },
+      { id: "load05", plate: "15바 5605", route: "south", courierId: "c05", temp: 4.8, scenario: "loading-delay", startDelayMs: 3 * 60 * 1000, scenarioLabel: "상차 중 · 3분 뒤 출발" },
+      { id: "depart01", plate: "21사 6101", route: "gangnam", courierId: "c01", temp: 4.8, scenario: "depart-now", scenarioLabel: "0초 출발" },
+      { id: "to02", plate: "22자 6202", route: "west", courierId: "c02", temp: 4.9, scenario: "to-stop", targetStopNo: 2, progress: .46, scenarioLabel: "2번 배송지 이동" },
+      { id: "to10", plate: "23바 6303", route: "songpa", courierId: "c03", temp: 5.0, scenario: "to-stop", targetStopNo: 10, progress: .18, scenarioLabel: "10번 배송지 이동" },
+      { id: "final12", plate: "24사 6404", route: "central", courierId: "c06", temp: 4.7, scenario: "arrive-soon", targetStopNo: 12, arriveInSec: 60, completeOnNextArrival: true, scenarioLabel: "12번 1분 뒤 도착 후 종료" },
+      { id: "unload04", plate: "31자 7104", route: "gangnam", courierId: "c07", temp: 4.6, scenario: "unloading", stopNo: 4, arrivedAgoMs: 0, remainingDwellMs: 5 * 60 * 1000, scenarioLabel: "정차 · 상품 하차 중" },
+      { id: "delay07", plate: "32바 7207", route: "south", courierId: "c05", temp: 5.2, scenario: "to-stop", targetStopNo: 7, progress: .31, scenarioLabel: "교통 지연 · 7번 이동" },
+      { id: "proof11", plate: "33사 7311", route: "central", courierId: "c04", temp: 4.9, scenario: "to-stop", targetStopNo: 11, progress: .18, scenarioLabel: "증빙 확인 필요 · 11번 이동" },
+      { id: "complete12", plate: "34자 7412", route: "songpa", courierId: "c03", temp: 4.5, scenario: "completed", scenarioLabel: "배송 완료 · 운행 종료" },
     ];
     const vehicles = scenarioDefinitions.map((vehicle) => ({
       ...vehicle,
@@ -382,12 +414,13 @@
       stops: ROUTE_TEMPLATES[vehicle.route].map(([name, coord], i) => ({ no: i + 1, name, coord }))
     }));
 
-    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, riskDismissedUntil: 0, speedLevel: 5, dwellMinutes: 5, viewMode: "2d", activeTab: "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, workAction: "", uploadPreview: false, selectedRecordIndex: 0, riskVehicleId: "unload04", map: null, selectedVehicleId: "depart01", selectedStopNo: 1, routes: {}, dropoffs: {}, routeLegs: {} };
+    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, lastTrackingAt: 0, lastTrackingSampleAt: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, riskDismissedUntil: 0, speedLevel: 5, dwellMinutes: 5, viewMode: "2d", activeTab: "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, workAction: "", uploadPreview: false, selectedRecordIndex: 0, selectedCourierId: "c01", trackingVehicleId: "", riskVehicleId: "unload04", map: null, selectedVehicleId: "depart01", selectedStopNo: 1, routes: {}, dropoffs: {}, routeLegs: {} };
     const demoLogs = [];
     const routeCache = new Map();
     window.demoLogs = demoLogs;
     const tabs = {
       control: ["관제", "지도 기반 실시간 배송 관제", "LIVE"],
+      couriers: ["배송원", "배송원별 차량, 배송 특징, 담당 루트를 확인합니다.", "인력"],
       work: ["업무", "주문, 증빙, 배정을 묶는 페이지", "업무"],
       issue: ["기록", "완료 배송 기록과 현장 팁을 모아보는 페이지", "기록"],
       settings: ["설정", "운영 설정값을 정하는 페이지", "미정"],
@@ -413,6 +446,10 @@
       if (DEBUG_LOGS) console.debug(`[Clever - DSV Demo] ${entry.method} ${entry.url} ${JSON.stringify(entry.payload)}`);
     }
     function selectedVehicle() { return vehicles.find((vehicle) => vehicle.id === state.selectedVehicleId) || vehicles[0]; }
+    function trackedVehicle() { return vehicles.find((vehicle) => vehicle.id === state.trackingVehicleId); }
+    function courierFor(vehicle = selectedVehicle()) { return couriers.find((courier) => courier.id === vehicle?.courierId) || couriers[0]; }
+    function selectedCourier() { return couriers.find((courier) => courier.id === state.selectedCourierId) || courierFor(selectedVehicle()); }
+    function vehiclesForCourier(courier = selectedCourier()) { return vehicles.filter((vehicle) => vehicle.courierId === courier.id); }
     function timeScale() { return TIME_SCALES[state.speedLevel] ?? 1; }
     function batchIntervalMs() { return timeScale() <= 0 ? 0 : Math.max(50, Math.round(BATCH_MS / timeScale())); }
     function stopDwellMs() { return Math.max(1, Number(state.dwellMinutes) || DEFAULT_DWELL_MINUTES) * 60 * 1000; }
@@ -463,6 +500,29 @@
       if (status === "moving") return "chip blue";
       if (status === "dwell" || status === "completed") return "chip green";
       return "chip";
+    }
+    function coordLabel(coord) {
+      if (!coord || !Number.isFinite(coord[0]) || !Number.isFinite(coord[1])) return "GPS 대기";
+      return `${coord[1].toFixed(5)}, ${coord[0].toFixed(5)}`;
+    }
+    function selectedDriverCard(vehicle = selectedVehicle()) {
+      const courier = courierFor(vehicle);
+      const status = vehicleStatus(vehicle);
+      const coord = vehiclePosition(vehicle);
+      const tracking = state.trackingVehicleId === vehicle.id;
+      return `<div class="driver-card">
+        <div class="driver-avatar" aria-hidden="true">${courier.avatar}</div>
+        <div>
+          <div class="driver-name"><span>${safeText(courier.name)}</span><small>${courier.age}세 · ${courier.gender}</small></div>
+          <div class="driver-facts">
+            <span>${safeText(courier.career)}</span><span>${safeText(courier.zone)}</span><span>등급 ${safeText(courier.score)}</span>
+          </div>
+        </div>
+        <div class="tracking-strip">
+          <span><i class="tracking-dot"></i><b>${tracking ? "실시간 트래킹 중" : "차량 클릭 시 트래킹"}</b> · ${safeText(status.label)} · ${safeText(vehicleLocationText(vehicle))}</span>
+          <span>${coordLabel(coord)}</span>
+        </div>
+      </div>`;
     }
     function riskStopNo(vehicle) {
       if (!vehicle.risk) return 0;
@@ -938,6 +998,7 @@
           <section class="card panel expand-card ${state.vehiclePanelOpen ? "expanded" : ""}" id="vehicleCard">
             <aside class="left-expansion temperature-expansion" id="temperaturePanel" aria-label="차량 온도 변화">${temperaturePanel(vehicle)}</aside>
             <div class="tab-line"><span>차량 리스트</span><span class="card-tools"><span class="chip mini">${vehicles.length}대 시나리오</span><button class="panel-toggle ${state.vehiclePanelOpen ? "active" : ""}" id="vehiclePanelToggle" type="button">${state.vehiclePanelOpen ? "닫기" : "온도"}</button></span></div>
+            <div id="selectedDriverCard">${selectedDriverCard(vehicle)}</div>
             <div class="fleet" id="fleetList"></div>
           </section>
           <section class="card panel expand-card ${state.destinationNoteOpen ? "expanded" : ""} ${state.destinationCollapsed ? "collapsed" : ""}" id="destinationCard">
@@ -1053,6 +1114,7 @@
         </div>`, `<div class="work-toolbar"><button class="btn primary" type="button" data-work-action="upload">주문 업로드</button><button class="btn" type="button" data-work-action="edit">수정</button><button class="btn danger" type="button" data-work-action="delete">삭제</button></div>`);
       document.querySelectorAll("[data-work-stop]").forEach((row) => row.addEventListener("click", () => {
         state.selectedVehicleId = row.dataset.workVehicle;
+        state.selectedCourierId = courierFor(selectedVehicle()).id;
         state.selectedStopNo = Number(row.dataset.workStop);
         const coord = selectedVehicle().stops[state.selectedStopNo - 1]?.coord;
         updateMapData();
@@ -1071,6 +1133,66 @@
       document.querySelector("[data-sheet-save]")?.addEventListener("click", (event) => {
         event.currentTarget.textContent = "저장됨";
       });
+    }
+
+    function renderCourierPage() {
+      const courier = selectedCourier();
+      const assigned = vehiclesForCourier(courier);
+      const selected = selectedVehicle();
+      const tracking = trackedVehicle();
+      renderPage("배송원", "배송원별 배정 차량, 담당 권역, 현장 특징을 확인합니다.", `
+        <div class="courier-grid">
+          <section class="page-panel">
+            <div class="tab-line"><span>배송원 리스트</span><span class="chip mini">${couriers.length}명</span></div>
+            <div class="courier-list">
+              ${couriers.map((person) => {
+                const count = vehiclesForCourier(person).length;
+                return `<button class="courier-card ${person.id === courier.id ? "active" : ""}" type="button" data-courier="${person.id}">
+                  <span class="driver-avatar" aria-hidden="true">${person.avatar}</span>
+                  <span><strong>${safeText(person.name)}</strong><small>${person.age}세 · ${person.gender} · ${safeText(person.zone)}</small></span>
+                  <span class="chip mini">${count}대</span>
+                </button>`;
+              }).join("")}
+            </div>
+          </section>
+          <section class="page-panel">
+            <div class="courier-detail-head">
+              <div class="driver-avatar" aria-hidden="true">${courier.avatar}</div>
+              <div>
+                <div class="tab-line"><span>${safeText(courier.name)}</span><span class="chip ${courier.score === "S" ? "green" : "blue"}">등급 ${safeText(courier.score)}</span></div>
+                <p class="tab-copy">${courier.age}세 · ${courier.gender} · ${safeText(courier.career)} · ${safeText(courier.zone)}</p>
+                <div class="trait-list">${courier.traits.map((trait) => `<span>${safeText(trait)}</span>`).join("")}</div>
+              </div>
+            </div>
+            <div class="work-section">
+              <div class="tab-line"><span>현재 추적</span><span class="chip ${tracking ? "blue" : "mini"}" id="courierTrackingChip">${tracking ? tracking.plate : "차량 선택 대기"}</span></div>
+              <p class="tab-copy" id="courierTrackingText">${tracking ? `${safeText(courierFor(tracking).name)} · ${safeText(vehicleLocationText(tracking))} · ${coordLabel(vehiclePosition(tracking))}` : "관제 화면이나 아래 배정 차량을 클릭하면 실시간 트래킹이 시작됩니다."}</p>
+            </div>
+            <div class="work-section">
+              <div class="tab-line"><span>배정 차량</span><span class="chip mini">${assigned.length}대</span></div>
+              <div class="assigned-list">
+                ${assigned.map((vehicle) => {
+                  const status = vehicleStatus(vehicle);
+                  return `<button class="assigned-row ${vehicle.id === selected.id ? "active" : ""}" type="button" data-courier-vehicle="${vehicle.id}">
+                    <span><strong>${safeText(vehicle.plate)}</strong><br><small data-assigned-location>${safeText(vehicleLocationText(vehicle))}</small></span>
+                    <span class="${etaChipClass(vehicle)}" data-assigned-status>${status.label} · ${etaText(vehicle)}</span>
+                  </button>`;
+                }).join("") || `<div class="tab-copy">현재 배정 차량이 없습니다.</div>`}
+              </div>
+            </div>
+          </section>
+        </div>`);
+      document.querySelectorAll("[data-courier]").forEach((button) => button.addEventListener("click", () => {
+        state.selectedCourierId = button.dataset.courier;
+        const first = vehiclesForCourier(selectedCourier())[0];
+        if (first) {
+          state.selectedVehicleId = first.id;
+          state.selectedStopNo = Math.min(Math.max(first.done + 1, 1), first.stops.length);
+        }
+        renderCourierPage();
+        updateMapData();
+      }));
+      document.querySelectorAll("[data-courier-vehicle]").forEach((button) => button.addEventListener("click", () => selectVehicle(button.dataset.courierVehicle, null, true)));
     }
 
     function renderIssuePage() {
@@ -1163,7 +1285,7 @@
           <span class="${etaChipClass(vehicle)}">${etaText(vehicle)}</span>
         </div>`).join("");
       document.querySelectorAll("#fleetList [data-vehicle]").forEach((row) => {
-        const pickVehicle = () => selectVehicle(row.dataset.vehicle, null, false);
+        const pickVehicle = () => selectVehicle(row.dataset.vehicle, null, true);
         row.addEventListener("pointerdown", pickVehicle);
         row.addEventListener("click", () => { if (!window.PointerEvent) pickVehicle(); });
       });
@@ -1198,6 +1320,7 @@
     }
     function renderSide() {
       state.lastPanelRenderAt = performance.now();
+      if (state.activeTab === "couriers") return renderCourierPage();
       if (state.activeTab === "work") return renderWorkPage();
       if (state.activeTab === "issue") return renderIssuePage();
       if (state.activeTab === "settings") return renderSettingsPage();
@@ -1249,6 +1372,35 @@
       panel.innerHTML = temperaturePanel(selectedVehicle());
       panel.scrollTop = scrollTop;
     }
+    function patchSelectedDriverCard() {
+      const card = $("selectedDriverCard");
+      if (card) card.innerHTML = selectedDriverCard(selectedVehicle());
+    }
+    function patchCourierPageLive() {
+      if (state.activeTab !== "couriers") return;
+      const tracking = trackedVehicle();
+      const chip = $("courierTrackingChip");
+      const text = $("courierTrackingText");
+      if (chip) {
+        chip.className = `chip ${tracking ? "blue" : "mini"}`;
+        chip.textContent = tracking ? tracking.plate : "차량 선택 대기";
+      }
+      if (text) text.textContent = tracking ? `${courierFor(tracking).name} · ${vehicleLocationText(tracking)} · ${coordLabel(vehiclePosition(tracking))}` : "관제 화면이나 아래 배정 차량을 클릭하면 실시간 트래킹이 시작됩니다.";
+      document.querySelectorAll("[data-courier-vehicle]").forEach((row) => {
+        const vehicle = vehicles.find((item) => item.id === row.dataset.courierVehicle);
+        if (!vehicle) return;
+        const status = vehicleStatus(vehicle);
+        row.classList.toggle("active", vehicle.id === state.selectedVehicleId);
+        const location = row.querySelector("[data-assigned-location]");
+        if (location) location.textContent = vehicleLocationText(vehicle);
+        const statusEl = row.querySelector("[data-assigned-status]");
+        if (statusEl) {
+          statusEl.className = etaChipClass(vehicle);
+          statusEl.dataset.assignedStatus = "";
+          statusEl.textContent = `${status.label} · ${etaText(vehicle)}`;
+        }
+      });
+    }
     function refreshControlSelection(vehicleChanged = false) {
       if (state.activeTab !== "control") return renderSide();
       const destinationScroll = $("destinationList")?.scrollTop || 0;
@@ -1256,6 +1408,7 @@
       else { patchLiveControlPanel(); renderCargo(); }
       const destinationList = $("destinationList");
       if (destinationList) destinationList.scrollTop = destinationScroll;
+      patchSelectedDriverCard();
       patchExpansionPanels();
     }
     function acknowledgeVehicleRisk(vehicle) {
@@ -1267,6 +1420,8 @@
     function inspectRiskVehicle() {
       const vehicle = riskVehicle();
       state.selectedVehicleId = vehicle.id;
+      state.selectedCourierId = vehicle.courierId;
+      enableVehicleTracking(vehicle.id);
       state.selectedStopNo = Math.min(Math.max(vehicle.done + 1, 1), vehicle.stops.length);
       state.activeTab = "control";
       state.vehiclePanelOpen = true;
@@ -1278,6 +1433,7 @@
       updateMapData();
       const coord = vehiclePosition(vehicle);
       if (coord) state.map?.easeTo({ center: coord, zoom: 13.8, duration: 500 });
+      followTrackedVehicle(true);
       logApi("POST", `${CLEVER_SERVER}/demo/alerts/inspect`, { vehicle: vehicle.id, alert: "TEMP_HIGH", panel: "temperature", at: new Date(simulatedNowMs()).toISOString() }, "info");
     }
     function clearRiskLog() {
@@ -1342,10 +1498,13 @@
       });
     }
     function renderLivePanels() {
-      // Telemetry ticks must not rebuild fleet/destination list HTML. Rebuilding those rows destroyed
-      // DOM/events at every GPS update. The open temperature panel is the only live-redrawn detail view.
+      // Telemetry ticks must not rebuild fleet/destination list HTML. Existing rows keep click handlers,
+      // while compact detail views and tracking camera are patched live.
       patchLiveControlPanel();
+      patchSelectedDriverCard();
       patchLiveTemperaturePanel();
+      patchCourierPageLive();
+      followTrackedVehicle(false);
     }
 
     async function fetchOsrmRoute(vehicle) {
@@ -1472,6 +1631,24 @@
       const data = mapData();
       setSource("origin", data.origin); setSource("routes", data.routes); setSource("route-done", data.routeDone); setSource("route-next", data.routeNext); setSource("stops", data.stops); setSource("dropoffs", data.dropoffs); setSource("vehicles", data.vehicles);
     }
+    function enableVehicleTracking(vehicleId) {
+      state.trackingVehicleId = vehicleId;
+      state.lastTrackingAt = 0;
+      state.lastTrackingSampleAt = 0;
+      logApi("POST", `${CLEVER_SERVER}/demo/tracking/start`, { vehicle: vehicleId, at: new Date(simulatedNowMs()).toISOString() }, "info");
+    }
+    function followTrackedVehicle(force = false) {
+      const vehicle = trackedVehicle();
+      if (!state.map || !vehicle) return;
+      const coord = vehiclePosition(vehicle);
+      if (!coord) return;
+      const nowMs = performance.now();
+      const sampleMs = simulatedNowMs();
+      if (!force && nowMs - state.lastTrackingAt < 320 && sampleMs - state.lastTrackingSampleAt < 1000) return;
+      state.lastTrackingAt = nowMs;
+      state.lastTrackingSampleAt = sampleMs;
+      state.map.easeTo({ center: coord, zoom: 14.2, duration: force ? 450 : 220, essential: true });
+    }
     function selectDestination(stopNo) {
       state.selectedStopNo = stopNo;
       updateMapData();
@@ -1479,16 +1656,19 @@
       const coord = selectedVehicle().stops[stopNo - 1]?.coord;
       if (coord) state.map?.easeTo({ center: coord, zoom: 15.8, duration: 550 });
     }
-    function selectVehicle(id, stopNo = null, openVehicle = false) {
+    function selectVehicle(id, stopNo = null, enableTracking = true) {
       const previousVehicleId = state.selectedVehicleId;
       state.selectedVehicleId = id;
       const vehicle = selectedVehicle();
+      state.selectedCourierId = vehicle.courierId;
+      if (enableTracking) enableVehicleTracking(vehicle.id);
       acknowledgeVehicleRisk(vehicle);
       state.selectedStopNo = stopNo || Math.min(Math.max(vehicle.done + 1, 1), vehicle.stops.length);
       updateMapData();
       refreshControlSelection(previousVehicleId !== vehicle.id);
       const coord = stopNo ? vehicle.stops[stopNo - 1]?.coord : vehiclePosition(vehicle);
       if (coord) state.map?.easeTo({ center: coord, zoom: 13.8, duration: 500 });
+      if (enableTracking && !stopNo) followTrackedVehicle(true);
     }
 
     function hideBusStops() {
@@ -1546,8 +1726,8 @@
         state.map.on("mouseleave", layer, () => { state.map.getCanvas().style.cursor = ""; });
       });
       state.map.on("click", "vehicles", (event) => selectVehicle(event.features[0].properties.vehicleId, null, true));
-      state.map.on("click", "stops", (event) => selectVehicle(event.features[0].properties.vehicleId, Number(event.features[0].properties.stopNo), true));
-      state.map.on("click", "dropoffs", (event) => selectVehicle(event.features[0].properties.vehicleId, Number(event.features[0].properties.stopNo), true));
+      state.map.on("click", "stops", (event) => selectVehicle(event.features[0].properties.vehicleId, Number(event.features[0].properties.stopNo), false));
+      state.map.on("click", "dropoffs", (event) => selectVehicle(event.features[0].properties.vehicleId, Number(event.features[0].properties.stopNo), false));
       ["routes", "route-next", "route-done"].forEach((layer) => state.map.on("click", layer, (event) => selectVehicle(event.features[0].properties.vehicleId || state.selectedVehicleId, null, true)));
     }
 
@@ -1588,7 +1768,7 @@
       const style = await loadMapStyle();
       state.map = new maplibregl.Map({ container: "map", style, center: [126.995, 37.43], zoom: 10.35, pitch: 0, bearing: 0, attributionControl: true, fadeDuration: 0 });
       state.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
-      state.map.on("load", () => { hideBusStops(); softenBoulevards(); enhance2dBuildings(); addMapLayers(); renderSide(); hydrateRoutes(); logApi("GET", OPENFREEMAP_STYLE, { connected: true, vehicles: 3, stops: 36, hiddenBasePoi: "bus", building2d: true, whiteBoulevards: true }); });
+      state.map.on("load", () => { hideBusStops(); softenBoulevards(); enhance2dBuildings(); addMapLayers(); renderSide(); hydrateRoutes(); logApi("GET", OPENFREEMAP_STYLE, { connected: true, vehicles: vehicles.length, stops: vehicles.reduce((sum, vehicle) => sum + vehicle.stops.length, 0), hiddenBasePoi: "bus", building2d: true, whiteBoulevards: true }); });
       state.map.on("error", (event) => logApi("MAP", "OpenFreeMap", { error: event?.error?.message || "map error" }, "risk"));
     }
 
@@ -1688,7 +1868,7 @@
       clearInterval(state.timer); state.timer = null; state.running = false; state.forcedRisk = false; state.forcedRiskStartedAt = 0; state.riskDismissedUntil = 0; state.batchNo = 0; state.lastSampleAt = 0; $("startBtn").classList.add("primary"); $("startBtn").classList.remove("danger"); $("startBtn").textContent = "Start Simulation";
       state.destinationCollapsed = false;
       applyAllScenarios(Date.now(), true);
-      state.selectedVehicleId = "depart01"; state.selectedStopNo = 1;
+      state.selectedVehicleId = "depart01"; state.selectedCourierId = courierFor(selectedVehicle()).id; state.selectedStopNo = 1; state.trackingVehicleId = ""; state.lastTrackingAt = 0; state.lastTrackingSampleAt = 0;
       setRisk(false, false); renderSide(); updateMapData();
     }
 
