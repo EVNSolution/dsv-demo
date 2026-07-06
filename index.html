@@ -766,9 +766,28 @@
       state.map.on("click", "dropoffs", (event) => selectVehicle(event.features[0].properties.vehicleId, Number(event.features[0].properties.stopNo), true));
       ["routes", "route-next", "route-done"].forEach((layer) => state.map.on("click", layer, (event) => selectVehicle(event.features[0].properties.vehicleId || state.selectedVehicleId, null, true)));
     }
-    function initMap() {
+
+    async function loadMapStyle() {
+      try {
+        const response = await fetch(OPENFREEMAP_STYLE, { cache: "force-cache" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const style = await response.json();
+        const building = style.layers?.find((layer) => layer.id === "building-3d");
+        if (building?.paint) {
+          building.paint["fill-extrusion-base"] = ["coalesce", ["to-number", ["get", "render_min_height"]], 0];
+          building.paint["fill-extrusion-height"] = ["coalesce", ["to-number", ["get", "render_height"]], 0];
+        }
+        return style;
+      } catch (error) {
+        logApi("GET", OPENFREEMAP_STYLE, { stylePatch: false, message: String(error.message || error) }, "pending");
+        return OPENFREEMAP_STYLE;
+      }
+    }
+
+    async function initMap() {
       if (!globalThis.maplibregl) { logApi("GET", OPENFREEMAP_STYLE, { connected: false, reason: "maplibre script unavailable" }, "risk"); return; }
-      state.map = new maplibregl.Map({ container: "map", style: OPENFREEMAP_STYLE, center: [126.99, 37.53], zoom: 11.25, pitch: 0, bearing: 0, attributionControl: true, fadeDuration: 0 });
+      const style = await loadMapStyle();
+      state.map = new maplibregl.Map({ container: "map", style, center: [126.99, 37.53], zoom: 11.25, pitch: 0, bearing: 0, attributionControl: true, fadeDuration: 0 });
       state.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
       state.map.on("load", () => { hideBusStops(); softenBoulevards(); enhance2dBuildings(); addMapLayers(); renderSide(); hydrateRoutes(); logApi("GET", OPENFREEMAP_STYLE, { connected: true, vehicles: 3, stops: 36, hiddenBasePoi: "bus", building2d: true, whiteBoulevards: true }); });
       state.map.on("error", (event) => logApi("MAP", "OpenFreeMap", { error: event?.error?.message || "map error" }, "risk"));
