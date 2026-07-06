@@ -1848,24 +1848,17 @@
       if (state.activeTab === "control") patchLiveControlPanel();
       if (log) logApi("PATCH", `${CLEVER_SERVER}/demo/simulation/update-level`, { level: state.speedLevel, timeScale: timeScale(), realBatchIntervalMs: batchIntervalMs(), fixedSpeedKph: FIXED_SPEED_KPH });
     }
-    function triggerRiskNow() {
-      state.riskDismissedUntil = 0;
-      state.forcedRisk = true; state.forcedRiskStartedAt = simulatedNowMs();
-      riskVehicle().temp = Math.max(riskVehicle().temp, 8.4);
-      setRisk(true);
-      logApi("POST", `${CLEVER_SERVER}/demo/alerts/evaluate`, { alert: "TEMP_HIGH", trigger: "manual-error-button" }, "risk");
-    }
     function start() {
-      if (state.running) return triggerRiskNow();
+      if (state.running) return;
       state.running = true; state.forcedRisk = false; state.forcedRiskStartedAt = 0; state.simStartedAt = Date.now(); state.batchNo = 0; state.lastSampleAt = 0;
       applyAllScenarios(state.simStartedAt, true);
-      $("startBtn").classList.remove("primary"); $("startBtn").classList.add("danger"); $("startBtn").textContent = "Error";
+      $("startBtn").classList.add("primary"); $("startBtn").classList.remove("danger"); $("startBtn").textContent = "Running"; $("startBtn").disabled = true;
       logApi("POST", `${CLEVER_SERVER}/demo/simulation/start`, { scenario: "gunpo-loading-multi-state", origin: ORIGIN, vehicles: vehicles.length, sampleIntervalSec: 0.5, batchIntervalSec: 1, realBatchIntervalMs: batchIntervalMs(), updateLevel: state.speedLevel, timeScale: timeScale(), fixedSpeedKph: FIXED_SPEED_KPH }, "pending");
       renderSide(); updateMapData();
       restartTimer();
     }
     function reset() {
-      clearInterval(state.timer); state.timer = null; state.running = false; state.forcedRisk = false; state.forcedRiskStartedAt = 0; state.riskDismissedUntil = 0; state.batchNo = 0; state.lastSampleAt = 0; $("startBtn").classList.add("primary"); $("startBtn").classList.remove("danger"); $("startBtn").textContent = "Start Simulation";
+      clearInterval(state.timer); state.timer = null; state.running = false; state.forcedRisk = false; state.forcedRiskStartedAt = 0; state.riskDismissedUntil = 0; state.batchNo = 0; state.lastSampleAt = 0; $("startBtn").classList.add("primary"); $("startBtn").classList.remove("danger"); $("startBtn").textContent = "Start Simulation"; $("startBtn").disabled = false;
       state.destinationCollapsed = false;
       applyAllScenarios(Date.now(), true);
       state.selectedVehicleId = "depart01"; state.selectedCourierId = courierFor(selectedVehicle()).id; state.selectedStopNo = 1; state.trackingVehicleId = ""; state.lastTrackingAt = 0; state.lastTrackingSampleAt = 0;
