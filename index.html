@@ -120,9 +120,10 @@
       padding: 16px; border-radius: 24px; background: rgba(255,255,255,.90); border: 1px solid rgba(255,255,255,.76);
       backdrop-filter: blur(18px); overflow: auto; display: none;
     }
+    .left-expansion.temperature-expansion { width: 476px; max-height: min(680px, calc(100vh - 88px)); }
     .expand-card.expanded .left-expansion { display: grid; gap: 12px; }
     .expansion-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 900; letter-spacing: -.03em; }
-    .temp-graph { width: 100%; height: 172px; display: block; border-radius: 18px; background: #fafafa; border: 1px solid var(--hairline); }
+    .temp-graph { width: 100%; height: 248px; display: block; border-radius: 20px; background: #fbfbfd; border: 1px solid var(--hairline); }
     .axis-note { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; font-weight: 800; }
     .event-log, .note-list { display: grid; gap: 8px; }
     .log-row, .note-row { display: grid; grid-template-columns: auto 1fr; gap: 9px; align-items: start; padding: 9px; border: 1px solid var(--hairline); border-radius: 15px; background: #fff; font-size: 12px; color: var(--muted); }
@@ -611,28 +612,44 @@
       });
     }
     function temperatureGraph(vehicle) {
-      const width = 320, height = 172, padX = 24, top = 18, graphH = 98, graphW = width - padX * 2;
+      const width = 430, height = 236, left = 42, right = 16, top = 30, bottom = 44;
+      const graphW = width - left - right, graphH = height - top - bottom;
       const nowMs = simulatedNowMs(), startMs = nowMs - TEMP_GRAPH_WINDOW_MS, minTemp = 2, maxTemp = 11.5;
       const y = (temp) => top + (maxTemp - temp) / (maxTemp - minTemp) * graphH;
-      const x = (minute) => padX + minute / 60 * graphW;
+      const x = (minute) => left + minute / 60 * graphW;
       const points = tempTimeline(vehicle);
       const path = points.map((point, i) => `${i ? "L" : "M"}${x(point.minute).toFixed(1)} ${y(point.temp).toFixed(1)}`).join(" ");
-      const ticks = Array.from({ length: 7 }, (_, i) => i * 10);
-      const blocks = arrivalEventsFor(vehicle, nowMs).filter((event) => event.at + stopDwellMs() >= startMs && event.at <= nowMs).map((event) => {
+      const xTicks = Array.from({ length: 7 }, (_, i) => i * 10);
+      const yTicks = [4, 6, 8, 10];
+      const stopBlocks = arrivalEventsFor(vehicle, nowMs).filter((event) => event.at + stopDwellMs() >= startMs && event.at <= nowMs).map((event) => {
         const blockStart = Math.max(0, (event.at - startMs) / 60000);
         const blockEnd = Math.min(60, (event.at + stopDwellMs() - startMs) / 60000);
         const blockWidth = Math.max(1.5, x(blockEnd) - x(blockStart));
-        return `<rect x="${x(blockStart).toFixed(1)}" y="${top}" width="${blockWidth.toFixed(1)}" height="${graphH}" rx="6" fill="#fff7e8" stroke="#f79009" stroke-opacity=".35"/><text x="${Math.min(width - 78, x(blockStart) + 6).toFixed(1)}" y="${top + 15}" fill="#9a5a00" font-size="10" font-weight="800">정차 5분</text>`;
+        return `<rect x="${x(blockStart).toFixed(1)}" y="${top}" width="${blockWidth.toFixed(1)}" height="${graphH}" rx="5" fill="#fff4df" stroke="#f79009" stroke-opacity=".28"/>`;
       }).join("");
-      return `<svg class="temp-graph" viewBox="0 0 ${width} ${height}" role="img" aria-label="최근 1시간 온도 그래프">
-        <rect x="0" y="0" width="${width}" height="${height}" rx="18" fill="#fafafa"/>
-        ${ticks.map((tick) => `<line x1="${x(tick).toFixed(1)}" y1="${top}" x2="${x(tick).toFixed(1)}" y2="${top + graphH}" stroke="#e5e5ea"/><text x="${x(tick).toFixed(1)}" y="${height - 18}" text-anchor="middle" fill="#6e6e73" font-size="10" font-weight="800">${tick === 60 ? "현재" : `-${60 - tick}`}</text>`).join("")}
-        ${blocks}
-        <line x1="${padX}" y1="${y(8).toFixed(1)}" x2="${width - padX}" y2="${y(8).toFixed(1)}" stroke="#d92d20" stroke-dasharray="4 4" stroke-opacity=".65"/>
-        <path d="${path}" fill="none" stroke="#1d1d1f" stroke-width="1.8"/>
-        ${points.map((point) => `<circle cx="${x(point.minute).toFixed(1)}" cy="${y(point.temp).toFixed(1)}" r="${point.risk || point.temp >= 8 ? 2.2 : 1.15}" fill="${point.risk || point.temp >= 8 ? "#d92d20" : "#1d1d1f"}"/>`).join("")}
-        <text x="${padX}" y="14" fill="#6e6e73" font-size="10" font-weight="800">℃</text>
-        <text x="${width - padX}" y="14" text-anchor="end" fill="#6e6e73" font-size="10" font-weight="800">30초 포인트 / 정차 5분</text>
+      const riskPoints = points.filter((point) => point.risk || point.temp >= 8);
+      const latest = points.at(-1) || { temp: vehicle.temp || vehicle.baseTemp || 0, minute: 60 };
+      return `<svg class="temp-graph" viewBox="0 0 ${width} ${height}" role="img" aria-label="최근 1시간 온도 분석 그래프">
+        <defs>
+          <linearGradient id="tempLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3a3a3c"/><stop offset="1" stop-color="#111111"/></linearGradient>
+          <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity=".12"/></filter>
+        </defs>
+        <rect x="0" y="0" width="${width}" height="${height}" rx="20" fill="#fbfbfd"/>
+        <rect x="${left}" y="${top}" width="${graphW}" height="${graphH}" rx="12" fill="#ffffff" stroke="#e5e5ea"/>
+        ${stopBlocks}
+        ${yTicks.map((tick) => `<line x1="${left}" y1="${y(tick).toFixed(1)}" x2="${width - right}" y2="${y(tick).toFixed(1)}" stroke="${tick === 8 ? "#d92d20" : "#ececf1"}" stroke-width="${tick === 8 ? 1.4 : 1}" stroke-dasharray="${tick === 8 ? "5 4" : ""}"/><text x="${left - 8}" y="${(y(tick) + 3).toFixed(1)}" text-anchor="end" fill="${tick === 8 ? "#d92d20" : "#6e6e73"}" font-size="10" font-weight="900">${tick}°</text>`).join("")}
+        ${xTicks.map((tick) => `<line x1="${x(tick).toFixed(1)}" y1="${top}" x2="${x(tick).toFixed(1)}" y2="${top + graphH}" stroke="#f0f0f4"/><text x="${x(tick).toFixed(1)}" y="${height - 18}" text-anchor="middle" fill="#6e6e73" font-size="10" font-weight="800">${tick === 60 ? "현재" : `-${60 - tick}`}</text>`).join("")}
+        <path d="${path}" fill="none" stroke="url(#tempLine)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" filter="url(#softGlow)"/>
+        ${points.filter((_, i) => i % 2 === 0).map((point) => `<circle cx="${x(point.minute).toFixed(1)}" cy="${y(point.temp).toFixed(1)}" r="1.25" fill="#1d1d1f" opacity=".72"/>`).join("")}
+        ${riskPoints.map((point) => `<circle cx="${x(point.minute).toFixed(1)}" cy="${y(point.temp).toFixed(1)}" r="3" fill="#d92d20" stroke="#fff" stroke-width="1.3"/>`).join("")}
+        <circle cx="${x(latest.minute).toFixed(1)}" cy="${y(latest.temp).toFixed(1)}" r="4" fill="#0066cc" stroke="#fff" stroke-width="1.5"/>
+        <text x="${left}" y="17" fill="#1d1d1f" font-size="11" font-weight="900">℃</text>
+        <text x="${width - right}" y="17" text-anchor="end" fill="#6e6e73" font-size="10" font-weight="900">30초 포인트 · 기준선 8℃</text>
+        <g transform="translate(${left},${height - 36})">
+          <rect x="0" y="0" width="10" height="10" rx="3" fill="#fff4df" stroke="#f79009" stroke-opacity=".35"/><text x="16" y="9" fill="#6e6e73" font-size="10" font-weight="800">정차 구간</text>
+          <circle cx="84" cy="5" r="3" fill="#0066cc"/><text x="92" y="9" fill="#6e6e73" font-size="10" font-weight="800">현재</text>
+          <circle cx="136" cy="5" r="3" fill="#d92d20"/><text x="144" y="9" fill="#6e6e73" font-size="10" font-weight="800">초과</text>
+        </g>
       </svg>`;
     }
     function temperatureEventLog(vehicle) {
@@ -658,7 +675,7 @@
     function temperaturePanel(vehicle) {
       const events = arrivalEventsFor(vehicle).slice(-3).reverse();
       return `<div class="expansion-title"><span>온도 변화 그래프</span>${latestTempStatus(vehicle)}</div>
-        <div class="axis-note"><span>현재 기준 최근 1시간</span><span>정차 5분 · 1분30초 상승/하강</span></div>
+        <div class="axis-note"><span>현재 기준 최근 1시간</span><span>30초 포인트 · 1분30초 상승/하강</span></div>
         ${temperatureGraph(vehicle)}
         <div class="event-log">
           ${events.map((event) => `<div class="log-row"><i>도</i><div><b>${safeText(event.stopName)} 도착</b><span>${timeLabel(event.at)} · 정차 구간 주의</span></div></div>`).join("")}
@@ -869,7 +886,7 @@
       const stop = selectedStop();
       $("sideContent").innerHTML = `
           <section class="card panel expand-card ${state.vehiclePanelOpen ? "expanded" : ""}" id="vehicleCard">
-            <aside class="left-expansion" aria-label="차량 온도 변화">${temperaturePanel(vehicle)}</aside>
+            <aside class="left-expansion temperature-expansion" aria-label="차량 온도 변화">${temperaturePanel(vehicle)}</aside>
             <div class="tab-line"><span>차량 리스트</span><span class="card-tools"><span class="chip mini">${vehicles.length}대 시나리오</span><button class="panel-toggle ${state.vehiclePanelOpen ? "active" : ""}" id="vehiclePanelToggle" type="button">${state.vehiclePanelOpen ? "닫기" : "온도"}</button></span></div>
             <div class="fleet" id="fleetList"></div>
           </section>
