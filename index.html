@@ -209,14 +209,16 @@
     .alert-dot { width: 18px; height: 18px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--risk); color: #fff; font-size: 12px; font-weight: 1000; line-height: 1; box-shadow: 0 0 0 3px var(--risk-soft); }
     .row-title { font-weight: 800; letter-spacing: -.02em; }
     .row-meta { color: var(--muted); font-size: 11px; margin-top: 0; }
-    .driver-card { margin-top: 12px; padding: 10px; display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: center; border: 1px solid var(--hairline); border-radius: 18px; background: rgba(255,255,255,.92); }
+    .floating-driver { position: absolute; left: 112px; top: 118px; z-index: 5; width: min(430px, calc(100vw - 530px)); pointer-events: none; }
+    .driver-card { margin-top: 0; padding: 10px; display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: center; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(255,255,255,.88); backdrop-filter: blur(18px); }
     .driver-avatar { width: 46px; height: 46px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(145deg, #f2f2f7, #ffffff); color: #6e6e73; font-size: 27px; border: 1px solid #ececf1; }
     .driver-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 1000; letter-spacing: -.03em; }
     .driver-name small { color: var(--muted); font-size: 10px; font-weight: 900; white-space: nowrap; }
     .driver-facts { margin-top: 4px; display: flex; gap: 5px; flex-wrap: wrap; color: var(--muted); font-size: 10px; font-weight: 900; }
     .driver-facts span { min-height: 19px; display: inline-flex; align-items: center; border-radius: 999px; padding: 0 7px; background: #f5f5f7; }
-    .tracking-strip { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-top: 2px; padding: 7px 9px; border-radius: 13px; background: #f8fbff; color: var(--muted); font-size: 11px; font-weight: 900; }
+    .tracking-strip { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 2px; padding: 7px 9px; border-radius: 13px; background: #f8fbff; color: var(--muted); font-size: 11px; font-weight: 900; }
     .tracking-strip b { color: var(--blue); }
+    .tracking-strip span:not(:first-child) { min-height: 19px; display: inline-flex; align-items: center; padding: 0 7px; border-radius: 999px; background: #fff; }
     .tracking-dot { width: 7px; height: 7px; border-radius: 99px; display: inline-block; margin-right: 5px; background: var(--blue); box-shadow: 0 0 0 5px rgba(0,102,204,.12); }
     .courier-grid { display:grid; grid-template-columns: minmax(280px, .9fr) 1.1fr; gap:16px; align-items:start; }
     .courier-list { display:grid; gap:10px; }
@@ -260,6 +262,8 @@
       .toast-action.close { width: 32px; }
       body.risk-banner-active .left-tabs { top: 66px; }
       body.risk-banner-active .top { top: 128px; }
+      .floating-driver { left: 12px; right: 12px; top: 180px; width: auto; }
+      body.risk-banner-active .floating-driver { top: 234px; }
       .side { position: relative; inset: auto; width: auto; margin: 14px 12px 20px; overflow: visible; }
       .left-expansion { position: static; width: auto; max-height: none; margin: 12px 0 0; }
       .page-content { position: relative; inset: auto; margin: 14px 12px 20px; padding: 20px; }
@@ -297,6 +301,7 @@
         <button id="resetBtn" class="btn">Reset</button>
       </div>
     </header>
+    <div id="floatingDriverCard" class="floating-driver" aria-label="선택 배송원"></div>
 
     <div id="toast" class="toast" role="alert" aria-live="assertive">
       <span class="toast-icon" aria-hidden="true">!</span>
@@ -340,12 +345,12 @@
       coord: [126.9372235, 37.3309480]
     };
     const couriers = [
-      { id: "c01", name: "김도윤", avatar: "👤", age: 42, gender: "남성", career: "냉장 의약품 6년", zone: "강남·서초", score: "A+", traits: ["병원 하역장 숙련", "POD 누락 0건", "온도기록계 확인 빠름"] },
-      { id: "c02", name: "이서연", avatar: "👤", age: 36, gender: "여성", career: "검체 운송 4년", zone: "마포·영등포", score: "A", traits: ["검체 인수증 꼼꼼", "야간 배송 가능", "주차 동선 메모 우수"] },
-      { id: "c03", name: "박민재", avatar: "👤", age: 31, gender: "남성", career: "백신 배송 3년", zone: "송파·강동", score: "A", traits: ["대형병원 보안절차 숙지", "정차시간 준수", "냉장 박스 회수 빠름"] },
-      { id: "c04", name: "정하린", avatar: "👤", age: 45, gender: "여성", career: "의약품 물류 8년", zone: "종로·중구", score: "S", traits: ["VIP 병원 담당", "분실사고 0건", "거래명세표 확인 강점"] },
-      { id: "c05", name: "최유준", avatar: "👤", age: 29, gender: "남성", career: "상온/냉장 복합 2년", zone: "수원·동탄", score: "B+", traits: ["장거리 루트 적응", "상차 검수 빠름", "긴급 콜 대응"] },
-      { id: "c06", name: "오지민", avatar: "👤", age: 39, gender: "여성", career: "임상시험 검체 5년", zone: "강북·서대문", score: "A+", traits: ["연구실 직접 인계", "온도 이탈 보고 빠름", "담당자 연락망 풍부"] },
+      { id: "c01", name: "김도윤", avatar: "👤", age: 42, gender: "남성", career: "냉장 의약품 6년", zone: "강남 서초", score: "A+", traits: ["병원 하역장 숙련", "POD 누락 0건", "온도기록계 확인 빠름"] },
+      { id: "c02", name: "이서연", avatar: "👤", age: 36, gender: "여성", career: "검체 운송 4년", zone: "마포 영등포", score: "A", traits: ["검체 인수증 꼼꼼", "야간 배송 가능", "주차 동선 메모 우수"] },
+      { id: "c03", name: "박민재", avatar: "👤", age: 31, gender: "남성", career: "백신 배송 3년", zone: "송파 강동", score: "A", traits: ["대형병원 보안절차 숙지", "정차시간 준수", "냉장 박스 회수 빠름"] },
+      { id: "c04", name: "정하린", avatar: "👤", age: 45, gender: "여성", career: "의약품 물류 8년", zone: "종로 중구", score: "S", traits: ["VIP 병원 담당", "분실사고 0건", "거래명세표 확인 강점"] },
+      { id: "c05", name: "최유준", avatar: "👤", age: 29, gender: "남성", career: "상온/냉장 복합 2년", zone: "수원 동탄", score: "B+", traits: ["장거리 루트 적응", "상차 검수 빠름", "긴급 콜 대응"] },
+      { id: "c06", name: "오지민", avatar: "👤", age: 39, gender: "여성", career: "임상시험 검체 5년", zone: "강북 서대문", score: "A+", traits: ["연구실 직접 인계", "온도 이탈 보고 빠름", "담당자 연락망 풍부"] },
       { id: "c07", name: "한태오", avatar: "👤", age: 34, gender: "남성", career: "응급 배송 4년", zone: "서울 전역", score: "A", traits: ["대체 경로 판단 빠름", "교통 지연 보고", "새벽 배송 가능"] },
     ];
     const ROUTE_TEMPLATES = {
@@ -381,19 +386,19 @@
       ]
     };
     const scenarioDefinitions = [
-      { id: "load01", plate: "11바 1201", route: "gangnam", courierId: "c01", temp: 4.6, scenario: "loading-hold", scenarioLabel: "상차 중 · 출발 대기" },
-      { id: "load02", plate: "12바 2302", route: "west", courierId: "c02", temp: 4.4, scenario: "loading-hold", scenarioLabel: "상차 중 · 검수 대기" },
-      { id: "load03", plate: "13사 3403", route: "songpa", courierId: "c03", temp: 4.7, scenario: "loading-hold", scenarioLabel: "상차 중 · 온도기록계 확인" },
-      { id: "load04", plate: "14자 4504", route: "central", courierId: "c04", temp: 4.5, scenario: "loading-hold", scenarioLabel: "상차 중 · 출고 지시 대기" },
-      { id: "load05", plate: "15바 5605", route: "south", courierId: "c05", temp: 4.8, scenario: "loading-delay", startDelayMs: 3 * 60 * 1000, scenarioLabel: "상차 중 · 3분 뒤 출발" },
+      { id: "load01", plate: "11바 1201", route: "gangnam", courierId: "c01", temp: 4.6, scenario: "loading-hold", scenarioLabel: "상차 중 출발 대기" },
+      { id: "load02", plate: "12바 2302", route: "west", courierId: "c02", temp: 4.4, scenario: "loading-hold", scenarioLabel: "상차 중 검수 대기" },
+      { id: "load03", plate: "13사 3403", route: "songpa", courierId: "c03", temp: 4.7, scenario: "loading-hold", scenarioLabel: "상차 중 온도기록계 확인" },
+      { id: "load04", plate: "14자 4504", route: "central", courierId: "c04", temp: 4.5, scenario: "loading-hold", scenarioLabel: "상차 중 출고 지시 대기" },
+      { id: "load05", plate: "15바 5605", route: "south", courierId: "c05", temp: 4.8, scenario: "loading-delay", startDelayMs: 3 * 60 * 1000, scenarioLabel: "상차 중 3분 뒤 출발" },
       { id: "depart01", plate: "21사 6101", route: "gangnam", courierId: "c01", temp: 4.8, scenario: "depart-now", scenarioLabel: "0초 출발" },
       { id: "to02", plate: "22자 6202", route: "west", courierId: "c02", temp: 4.9, scenario: "to-stop", targetStopNo: 2, progress: .46, scenarioLabel: "2번 배송지 이동" },
       { id: "to10", plate: "23바 6303", route: "songpa", courierId: "c03", temp: 5.0, scenario: "to-stop", targetStopNo: 10, progress: .18, scenarioLabel: "10번 배송지 이동" },
       { id: "final12", plate: "24사 6404", route: "central", courierId: "c06", temp: 4.7, scenario: "arrive-soon", targetStopNo: 12, arriveInSec: 60, completeOnNextArrival: true, scenarioLabel: "12번 1분 뒤 도착 후 종료" },
-      { id: "unload04", plate: "31자 7104", route: "gangnam", courierId: "c07", temp: 4.6, scenario: "unloading", stopNo: 4, arrivedAgoMs: 0, remainingDwellMs: 5 * 60 * 1000, scenarioLabel: "정차 · 상품 하차 중" },
-      { id: "delay07", plate: "32바 7207", route: "south", courierId: "c05", temp: 5.2, scenario: "to-stop", targetStopNo: 7, progress: .31, scenarioLabel: "교통 지연 · 7번 이동" },
-      { id: "proof11", plate: "33사 7311", route: "central", courierId: "c04", temp: 4.9, scenario: "to-stop", targetStopNo: 11, progress: .18, scenarioLabel: "증빙 확인 필요 · 11번 이동" },
-      { id: "complete12", plate: "34자 7412", route: "songpa", courierId: "c03", temp: 4.5, scenario: "completed", scenarioLabel: "배송 완료 · 운행 종료" },
+      { id: "unload04", plate: "31자 7104", route: "gangnam", courierId: "c07", temp: 4.6, scenario: "unloading", stopNo: 4, arrivedAgoMs: 0, remainingDwellMs: 5 * 60 * 1000, scenarioLabel: "정차 상품 하차 중" },
+      { id: "delay07", plate: "32바 7207", route: "south", courierId: "c05", temp: 5.2, scenario: "to-stop", targetStopNo: 7, progress: .31, scenarioLabel: "교통 지연 7번 이동" },
+      { id: "proof11", plate: "33사 7311", route: "central", courierId: "c04", temp: 4.9, scenario: "to-stop", targetStopNo: 11, progress: .18, scenarioLabel: "증빙 확인 필요 11번 이동" },
+      { id: "complete12", plate: "34자 7412", route: "songpa", courierId: "c03", temp: 4.5, scenario: "completed", scenarioLabel: "배송 완료 운행 종료" },
     ];
     const vehicles = scenarioDefinitions.map((vehicle) => ({
       ...vehicle,
@@ -501,26 +506,22 @@
       if (status === "dwell" || status === "completed") return "chip green";
       return "chip";
     }
-    function coordLabel(coord) {
-      if (!coord || !Number.isFinite(coord[0]) || !Number.isFinite(coord[1])) return "GPS 대기";
-      return `${coord[1].toFixed(5)}, ${coord[0].toFixed(5)}`;
-    }
     function selectedDriverCard(vehicle = selectedVehicle()) {
       const courier = courierFor(vehicle);
       const status = vehicleStatus(vehicle);
-      const coord = vehiclePosition(vehicle);
       const tracking = state.trackingVehicleId === vehicle.id;
       return `<div class="driver-card">
         <div class="driver-avatar" aria-hidden="true">${courier.avatar}</div>
         <div>
-          <div class="driver-name"><span>${safeText(courier.name)}</span><small>${courier.age}세 · ${courier.gender}</small></div>
+          <div class="driver-name"><span>${safeText(courier.name)}</span><small>${courier.age}세 ${courier.gender}</small></div>
           <div class="driver-facts">
             <span>${safeText(courier.career)}</span><span>${safeText(courier.zone)}</span><span>등급 ${safeText(courier.score)}</span>
           </div>
         </div>
         <div class="tracking-strip">
-          <span><i class="tracking-dot"></i><b>${tracking ? "실시간 트래킹 중" : "차량 클릭 시 트래킹"}</b> · ${safeText(status.label)} · ${safeText(vehicleLocationText(vehicle))}</span>
-          <span>${coordLabel(coord)}</span>
+          <span><i class="tracking-dot"></i><b>${tracking ? "실시간 트래킹 중" : "차량 클릭 시 트래킹"}</b></span>
+          <span>${safeText(status.label)}</span>
+          <span>${safeText(vehicleLocationText(vehicle))}</span>
         </div>
       </div>`;
     }
@@ -737,7 +738,7 @@
         ${riskPoints.map((point) => `<circle cx="${x(point.minute).toFixed(1)}" cy="${y(point.temp).toFixed(1)}" r="3" fill="#d92d20" stroke="#fff" stroke-width="1.3"/>`).join("")}
         <circle cx="${x(latest.minute).toFixed(1)}" cy="${y(latest.temp).toFixed(1)}" r="4" fill="#0066cc" stroke="#fff" stroke-width="1.5"/>
         <text x="${left}" y="17" fill="#1d1d1f" font-size="11" font-weight="900">℃</text>
-        <text x="${width - right}" y="17" text-anchor="end" fill="#6e6e73" font-size="10" font-weight="900">30초 포인트 · 기준선 8℃</text>
+        <text x="${width - right}" y="17" text-anchor="end" fill="#6e6e73" font-size="10" font-weight="900">30초 포인트 기준선 8℃</text>
         <text x="${width - right}" y="${(y(8) - 6).toFixed(1)}" text-anchor="end" fill="#d92d20" font-size="10" font-weight="900">주의 기준</text>
         <g transform="translate(${left},${height - 36})">
           <rect x="0" y="0" width="10" height="10" rx="3" fill="#fff4df" stroke="#f79009" stroke-opacity=".35"/><text x="16" y="9" fill="#6e6e73" font-size="10" font-weight="800">정차 구간</text>
@@ -757,7 +758,7 @@
     }
     function temperatureEventLog(vehicle) {
       const logs = vehicle.tempEvents?.length ? vehicle.tempEvents : [{ at: simulatedNowMs(), status: "normal", temp: Number(vehicle.temp || vehicle.baseTemp || 0).toFixed(1), message: "온도 변화 수집 대기" }];
-      return logs.map((event) => `<div class="log-row ${event.status === "risk" ? "risk" : event.status === "resolved" ? "resolved" : ""}"><i>${event.status === "resolved" ? "✓" : event.status === "risk" ? "!" : "·"}</i><div><b>${safeText(event.message)}</b><span>${timeLabel(event.at)} · ${event.temp}℃</span></div></div>`).join("");
+      return logs.map((event) => `<div class="log-row ${event.status === "risk" ? "risk" : event.status === "resolved" ? "resolved" : ""}"><i>${event.status === "resolved" ? "✓" : event.status === "risk" ? "!" : "온"}</i><div><b>${safeText(event.message)}</b><span>${timeLabel(event.at)} ${event.temp}℃</span></div></div>`).join("");
     }
     function stopNotes(vehicle, stop) {
       const entrances = ["후문 지하주차장 B1 하역장 이용", "건물 북측 약품 반입구 사용", "정문 혼잡 시 우측 서비스도로 진입", "1층 보안데스크에서 약제팀 호출"];
@@ -779,7 +780,7 @@
       const events = arrivalEventsFor(vehicle).slice(-3).reverse();
       const stats = temperatureStats(vehicle);
       return `<div class="expansion-title"><span>온도 변화 그래프</span>${latestTempStatus(vehicle)}</div>
-        <div class="axis-note"><span>현재 기준 최근 1시간</span><span>30초 포인트 · 1분30초 상승/하강</span></div>
+        <div class="axis-note"><span>현재 기준 최근 1시간</span><span>30초 포인트 1분30초 상승/하강</span></div>
         <div class="temp-kpis">
           <div class="temp-kpi"><span>현재 온도</span><b>${stats.latest.toFixed(1)}℃</b></div>
           <div class="temp-kpi"><span>1시간 평균</span><b>${stats.avg.toFixed(1)}℃</b></div>
@@ -788,7 +789,7 @@
         </div>
         ${temperatureGraph(vehicle)}
         <div class="event-log">
-          ${events.map((event) => `<div class="log-row"><i>도</i><div><b>${safeText(event.stopName)} 도착</b><span>${timeLabel(event.at)} · 정차 구간 주의</span></div></div>`).join("")}
+          ${events.map((event) => `<div class="log-row"><i>도</i><div><b>${safeText(event.stopName)} 도착</b><span>${timeLabel(event.at)} 정차 구간 주의</span></div></div>`).join("")}
           ${temperatureEventLog(vehicle)}
         </div>`;
     }
@@ -988,6 +989,7 @@
     function setPageMode(isControl) {
       document.querySelector(".map-card").hidden = !isControl;
       document.querySelector(".side").hidden = !isControl;
+      $("floatingDriverCard").hidden = !isControl;
       $("pageContent").hidden = isControl;
     }
 
@@ -998,7 +1000,6 @@
           <section class="card panel expand-card ${state.vehiclePanelOpen ? "expanded" : ""}" id="vehicleCard">
             <aside class="left-expansion temperature-expansion" id="temperaturePanel" aria-label="차량 온도 변화">${temperaturePanel(vehicle)}</aside>
             <div class="tab-line"><span>차량 리스트</span><span class="card-tools"><span class="chip mini">${vehicles.length}대 시나리오</span><button class="panel-toggle ${state.vehiclePanelOpen ? "active" : ""}" id="vehiclePanelToggle" type="button">${state.vehiclePanelOpen ? "닫기" : "온도"}</button></span></div>
-            <div id="selectedDriverCard">${selectedDriverCard(vehicle)}</div>
             <div class="fleet" id="fleetList"></div>
           </section>
           <section class="card panel expand-card ${state.destinationNoteOpen ? "expanded" : ""} ${state.destinationCollapsed ? "collapsed" : ""}" id="destinationCard">
@@ -1012,7 +1013,7 @@
             <div class="title" style="font-size:16px" id="cargoTitle">배송 물품</div>
             <div class="timeline" id="cargoList"></div>
           </section>`;
-      renderFleet(); renderStops();
+      renderFleet(); renderStops(); patchSelectedDriverCard();
       $("vehiclePanelToggle")?.addEventListener("click", () => { state.vehiclePanelOpen = !state.vehiclePanelOpen; if (state.vehiclePanelOpen) state.destinationNoteOpen = false; renderSide(); });
       $("notePanelToggle")?.addEventListener("click", () => { state.destinationNoteOpen = !state.destinationNoteOpen; if (state.destinationNoteOpen) state.vehiclePanelOpen = false; renderSide(); });
       $("destinationToggle")?.addEventListener("click", toggleDestinations);
@@ -1149,7 +1150,7 @@
                 const count = vehiclesForCourier(person).length;
                 return `<button class="courier-card ${person.id === courier.id ? "active" : ""}" type="button" data-courier="${person.id}">
                   <span class="driver-avatar" aria-hidden="true">${person.avatar}</span>
-                  <span><strong>${safeText(person.name)}</strong><small>${person.age}세 · ${person.gender} · ${safeText(person.zone)}</small></span>
+                  <span><strong>${safeText(person.name)}</strong><small>${person.age}세 ${person.gender} ${safeText(person.zone)}</small></span>
                   <span class="chip mini">${count}대</span>
                 </button>`;
               }).join("")}
@@ -1160,13 +1161,13 @@
               <div class="driver-avatar" aria-hidden="true">${courier.avatar}</div>
               <div>
                 <div class="tab-line"><span>${safeText(courier.name)}</span><span class="chip ${courier.score === "S" ? "green" : "blue"}">등급 ${safeText(courier.score)}</span></div>
-                <p class="tab-copy">${courier.age}세 · ${courier.gender} · ${safeText(courier.career)} · ${safeText(courier.zone)}</p>
+                <p class="tab-copy">${courier.age}세 ${courier.gender} ${safeText(courier.career)} ${safeText(courier.zone)}</p>
                 <div class="trait-list">${courier.traits.map((trait) => `<span>${safeText(trait)}</span>`).join("")}</div>
               </div>
             </div>
             <div class="work-section">
               <div class="tab-line"><span>현재 추적</span><span class="chip ${tracking ? "blue" : "mini"}" id="courierTrackingChip">${tracking ? tracking.plate : "차량 선택 대기"}</span></div>
-              <p class="tab-copy" id="courierTrackingText">${tracking ? `${safeText(courierFor(tracking).name)} · ${safeText(vehicleLocationText(tracking))} · ${coordLabel(vehiclePosition(tracking))}` : "관제 화면이나 아래 배정 차량을 클릭하면 실시간 트래킹이 시작됩니다."}</p>
+              <p class="tab-copy" id="courierTrackingText">${tracking ? `${safeText(courierFor(tracking).name)} ${safeText(vehicleStatus(tracking).label)} ${safeText(vehicleLocationText(tracking))}` : "관제 화면이나 아래 배정 차량을 클릭하면 실시간 트래킹이 시작됩니다."}</p>
             </div>
             <div class="work-section">
               <div class="tab-line"><span>배정 차량</span><span class="chip mini">${assigned.length}대</span></div>
@@ -1175,7 +1176,7 @@
                   const status = vehicleStatus(vehicle);
                   return `<button class="assigned-row ${vehicle.id === selected.id ? "active" : ""}" type="button" data-courier-vehicle="${vehicle.id}">
                     <span><strong>${safeText(vehicle.plate)}</strong><br><small data-assigned-location>${safeText(vehicleLocationText(vehicle))}</small></span>
-                    <span class="${etaChipClass(vehicle)}" data-assigned-status>${status.label} · ${etaText(vehicle)}</span>
+                    <span class="${etaChipClass(vehicle)}" data-assigned-status>${status.label} ${etaText(vehicle)}</span>
                   </button>`;
                 }).join("") || `<div class="tab-copy">현재 배정 차량이 없습니다.</div>`}
               </div>
@@ -1373,7 +1374,7 @@
       panel.scrollTop = scrollTop;
     }
     function patchSelectedDriverCard() {
-      const card = $("selectedDriverCard");
+      const card = $("floatingDriverCard");
       if (card) card.innerHTML = selectedDriverCard(selectedVehicle());
     }
     function patchCourierPageLive() {
@@ -1385,7 +1386,7 @@
         chip.className = `chip ${tracking ? "blue" : "mini"}`;
         chip.textContent = tracking ? tracking.plate : "차량 선택 대기";
       }
-      if (text) text.textContent = tracking ? `${courierFor(tracking).name} · ${vehicleLocationText(tracking)} · ${coordLabel(vehiclePosition(tracking))}` : "관제 화면이나 아래 배정 차량을 클릭하면 실시간 트래킹이 시작됩니다.";
+      if (text) text.textContent = tracking ? `${courierFor(tracking).name} ${vehicleStatus(tracking).label} ${vehicleLocationText(tracking)}` : "관제 화면이나 아래 배정 차량을 클릭하면 실시간 트래킹이 시작됩니다.";
       document.querySelectorAll("[data-courier-vehicle]").forEach((row) => {
         const vehicle = vehicles.find((item) => item.id === row.dataset.courierVehicle);
         if (!vehicle) return;
@@ -1397,7 +1398,7 @@
         if (statusEl) {
           statusEl.className = etaChipClass(vehicle);
           statusEl.dataset.assignedStatus = "";
-          statusEl.textContent = `${status.label} · ${etaText(vehicle)}`;
+          statusEl.textContent = `${status.label} ${etaText(vehicle)}`;
         }
       });
     }
@@ -1782,7 +1783,7 @@
       // TEMP_HIGH alert is intentionally bound to state.riskVehicleId.
       // If the demo risk target changes, this text follows that vehicle instead of a stale hardcoded name.
       // The 3-minute scenario duration is simulation logic only; the screen banner stays concise.
-      $("toastText").textContent = `온도 상승 오류 · ${riskSource.plate} · 특장 온도 ${Number(riskSource.temp || 0).toFixed(1)}℃ · 기준 8℃ 초과`;
+      $("toastText").textContent = `온도 상승 오류 ${riskSource.plate} 특장 온도 ${Number(riskSource.temp || 0).toFixed(1)}℃ 기준 8℃ 초과`;
       $("toast").classList.toggle("show", visible);
       document.body.classList.toggle("risk-banner-active", visible);
       state.risk = visible;
