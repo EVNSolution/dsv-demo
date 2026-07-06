@@ -292,7 +292,7 @@
     function logApi(method, url, payload, kind = "") {
       const entry = { at: now(), latency: latency(), kind: kind || "info", method, url, payload };
       demoLogs.unshift(entry); demoLogs.length = Math.min(demoLogs.length, 160);
-      if (DEBUG_LOGS) console.debug("[Clever - DSV Demo]", entry);
+      if (DEBUG_LOGS) console.debug(`[Clever - DSV Demo] ${entry.method} ${entry.url} ${JSON.stringify(entry.payload)}`);
     }
     function selectedVehicle() { return vehicles.find((vehicle) => vehicle.id === state.selectedVehicleId) || vehicles[0]; }
     function selectedStop() { return selectedVehicle().stops[state.selectedStopNo - 1] || selectedVehicle().stops[0]; }
@@ -772,11 +772,26 @@
         const response = await fetch(OPENFREEMAP_STYLE, { cache: "force-cache" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const style = await response.json();
+        const patched = { buildingHeights: 0, numericComparisons: 0 };
         const building = style.layers?.find((layer) => layer.id === "building-3d");
         if (building?.paint) {
-          building.paint["fill-extrusion-base"] = ["coalesce", ["to-number", ["get", "render_min_height"]], 0];
-          building.paint["fill-extrusion-height"] = ["coalesce", ["to-number", ["get", "render_height"]], 0];
+          building.paint["fill-extrusion-base"] = ["number", ["get", "render_min_height"], 0];
+          building.paint["fill-extrusion-height"] = ["number", ["get", "render_height"], 0];
+          patched.buildingHeights = 2;
         }
+        const patchNumericFilters = (node) => {
+          if (!Array.isArray(node)) return node;
+          const op = node[0];
+          if ([">", ">=", "<", "<="].includes(op) && Array.isArray(node[1]) && node[1][0] === "get" && typeof node[2] === "number") {
+            patched.numericComparisons += 1;
+            const fallback = op === "<" || op === "<=" ? 1000000000 : -1000000000;
+            return [op, ["number", node[1], fallback], node[2]];
+          }
+          return node.map(patchNumericFilters);
+        };
+        style.layers?.forEach((layer) => { if (Array.isArray(layer.filter)) layer.filter = patchNumericFilters(layer.filter); });
+        window.mapDebugReport = { stylePatched: true, patched };
+        if (DEBUG_LOGS) console.info(`[Clever - DSV MapDebug] ${JSON.stringify(window.mapDebugReport)}`);
         return style;
       } catch (error) {
         logApi("GET", OPENFREEMAP_STYLE, { stylePatch: false, message: String(error.message || error) }, "pending");
