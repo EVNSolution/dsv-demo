@@ -37,7 +37,9 @@
       display: flex; align-items: center; gap: 14px;
       padding: 14px 16px 14px 18px; border-radius: 24px;
       background: rgba(255,255,255,.84); border: 1px solid rgba(255,255,255,.72); box-shadow: var(--shadow); backdrop-filter: blur(18px);
+      transition: top .28s ease;
     }
+    body.risk-banner-active .top { top: 80px; }
     h1 { margin: 0; font-size: clamp(22px, 2.4vw, 34px); line-height: 1.05; letter-spacing: -.045em; white-space: nowrap; }
     .controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .speed-control { margin-top: 8px; display: grid; grid-template-columns: auto minmax(210px, 1fr) auto auto; gap: 8px; align-items: center; color: var(--muted); font-size: 11px; font-weight: 900; letter-spacing: -.02em; }
@@ -91,14 +93,19 @@
     .maplibregl-control-container { font-family: inherit; }
     .maplibregl-ctrl-attrib { font-size: 11px; }
     .toast {
-      position: absolute; left: 20px; right: 22px; top: 104px; z-index: 8; min-height: 48px;
-      display: flex; align-items: center; gap: 10px; padding: 0 18px; border-radius: 999px;
-      background: rgba(255,240,237,.96); border: 1px solid rgba(217,45,32,.30); color: var(--risk); box-shadow: 0 18px 42px rgba(217,45,32,.16);
-      opacity: 0; transform: translateY(-10px); pointer-events: none; transition: opacity .28s ease, transform .28s ease;
+      position: fixed; left: 12px; right: 12px; top: 10px; z-index: 2147483000; min-height: 52px;
+      display: flex; align-items: center; gap: 12px; padding: 0 10px 0 18px; border-radius: 18px;
+      background: rgba(255,240,237,.98); border: 1px solid rgba(217,45,32,.34); color: var(--risk); box-shadow: 0 18px 52px rgba(217,45,32,.22);
+      opacity: 0; transform: translateY(-12px); pointer-events: none; transition: opacity .24s ease, transform .24s ease;
     }
-    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
     .toast-icon { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center; background: var(--risk); color: #fff; font-size: 14px; font-weight: 1000; line-height: 1; }
-    .toast-text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #7f1d1d; font-size: 14px; font-weight: 900; letter-spacing: -.03em; }
+    .toast-text { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #7f1d1d; font-size: 14px; font-weight: 900; letter-spacing: -.03em; }
+    .toast-actions { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; }
+    .toast-action { min-height: 34px; border: 0; border-radius: 999px; padding: 0 12px; background: #fff; color: #7f1d1d; cursor: pointer; font-size: 12px; font-weight: 1000; box-shadow: inset 0 0 0 1px rgba(217,45,32,.18); }
+    .toast-action.primary { background: var(--risk); color: #fff; box-shadow: none; }
+    .toast-action.close { width: 34px; padding: 0; font-size: 18px; line-height: 1; }
+    .toast-action:focus-visible { outline: 3px solid rgba(217,45,32,.24); outline-offset: 2px; }
 
     .side { position: absolute; right: 22px; top: 22px; bottom: 22px; z-index: 4; width: min(370px, calc(100vw - 44px)); display: grid; gap: 14px; align-content: start; overflow: visible; padding: 0 0 0 4px; }
     .side .card { box-shadow: none; overflow: visible; }
@@ -210,8 +217,13 @@
       .left-tabs { left: 12px; right: 12px; top: 12px; bottom: auto; transform: none; width: auto; grid-auto-flow: column; grid-auto-columns: 70px; overflow-x: auto; }
       .top { position: fixed; left: 12px; right: 12px; top: 74px; transform: none; flex-wrap: wrap; }
       .map-card { position: relative; height: 62vh; min-height: 460px; }
-      .toast { left: 12px; right: 12px; top: 150px; }
-      body.risk-banner-active .left-tabs { top: 12px; }
+      .toast { left: 8px; right: 8px; top: 8px; min-height: 50px; border-radius: 16px; }
+      .toast-text { font-size: 12px; }
+      .toast-actions { gap: 4px; margin-left: 4px; }
+      .toast-action { min-height: 32px; padding: 0 9px; font-size: 11px; }
+      .toast-action.close { width: 32px; }
+      body.risk-banner-active .left-tabs { top: 66px; }
+      body.risk-banner-active .top { top: 128px; }
       .side { position: relative; inset: auto; width: auto; margin: 14px 12px 20px; overflow: visible; }
       .left-expansion { position: static; width: auto; max-height: none; margin: 12px 0 0; }
       .page-content { position: relative; inset: auto; margin: 14px 12px 20px; padding: 20px; }
@@ -249,14 +261,19 @@
       </div>
     </header>
 
+    <div id="toast" class="toast" role="alert" aria-live="assertive">
+      <span class="toast-icon" aria-hidden="true">!</span>
+      <span id="toastText" class="toast-text">온도 상승 오류</span>
+      <span class="toast-actions" aria-label="온도 오류 조치">
+        <button id="riskInspectBtn" class="toast-action primary" type="button">차량 확인</button>
+        <button id="riskDismissBtn" class="toast-action close" type="button" aria-label="온도 오류 로그 지우기">×</button>
+      </span>
+    </div>
+
     <section class="grid" aria-label="배송 관제 데모">
       <article class="card map-card" aria-label="실시간 차량 지도">
         <div class="map-wrap">
           <div id="map" aria-label="OpenFreeMap 서울 배송 지도"></div>
-          <div id="toast" class="toast" role="alert" aria-live="assertive">
-            <span class="toast-icon" aria-hidden="true">!</span>
-            <span id="toastText" class="toast-text">온도 상승 오류</span>
-          </div>
         </div>
       </article>
 
@@ -351,7 +368,7 @@
       stops: ROUTE_TEMPLATES[vehicle.route].map(([name, coord], i) => ({ no: i + 1, name, coord }))
     }));
 
-    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, speedLevel: 5, dwellMinutes: 5, viewMode: "2d", activeTab: "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, workAction: "", uploadPreview: false, selectedRecordIndex: 0, riskVehicleId: "unload04", map: null, selectedVehicleId: "depart01", selectedStopNo: 1, routes: {}, dropoffs: {}, routeLegs: {} };
+    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, riskDismissedUntil: 0, speedLevel: 5, dwellMinutes: 5, viewMode: "2d", activeTab: "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, workAction: "", uploadPreview: false, selectedRecordIndex: 0, riskVehicleId: "unload04", map: null, selectedVehicleId: "depart01", selectedStopNo: 1, routes: {}, dropoffs: {}, routeLegs: {} };
     const demoLogs = [];
     const routeCache = new Map();
     window.demoLogs = demoLogs;
@@ -1162,6 +1179,39 @@
       vehicle.riskAcknowledgedAt = simulatedNowMs();
       logApi("POST", `${CLEVER_SERVER}/demo/alerts/acknowledge`, { vehicle: vehicle.id, alert: "TEMP_HIGH", at: new Date(vehicle.riskAcknowledgedAt).toISOString() }, "info");
     }
+    function inspectRiskVehicle() {
+      const vehicle = riskVehicle();
+      state.selectedVehicleId = vehicle.id;
+      state.selectedStopNo = Math.min(Math.max(vehicle.done + 1, 1), vehicle.stops.length);
+      state.activeTab = "control";
+      state.vehiclePanelOpen = true;
+      state.destinationNoteOpen = false;
+      state.destinationCollapsed = false;
+      acknowledgeVehicleRisk(vehicle);
+      document.querySelectorAll(".main-tab").forEach((button) => button.classList.toggle("active", button.dataset.tab === "control"));
+      renderSide();
+      updateMapData();
+      const coord = vehiclePosition(vehicle);
+      if (coord) state.map?.easeTo({ center: coord, zoom: 13.8, duration: 500 });
+      logApi("POST", `${CLEVER_SERVER}/demo/alerts/inspect`, { vehicle: vehicle.id, alert: "TEMP_HIGH", panel: "temperature", at: new Date(simulatedNowMs()).toISOString() }, "info");
+    }
+    function clearRiskLog() {
+      const vehicle = riskVehicle();
+      const atMs = simulatedNowMs();
+      state.riskDismissedUntil = atMs + TEMP_RISK_DURATION_MS + TEMP_RISK_DELAY_MS;
+      state.forcedRisk = false;
+      state.forcedRiskStartedAt = 0;
+      state.risk = false;
+      vehicle.risk = false;
+      vehicle.unacknowledgedRisk = false;
+      vehicle.riskAcknowledgedAt = atMs;
+      vehicle.tempEvents = [];
+      $("toast").classList.remove("show");
+      document.body.classList.remove("risk-banner-active");
+      updateMapData();
+      renderLivePanels();
+      logApi("DELETE", `${CLEVER_SERVER}/demo/temperature-events`, { vehicle: vehicle.id, alert: "TEMP_HIGH", dismissedUntil: new Date(state.riskDismissedUntil).toISOString() }, "info");
+    }
     function patchLiveControlPanel() {
       if (state.activeTab !== "control") return;
       const fleet = $("fleetList");
@@ -1457,16 +1507,19 @@
 
     function setRisk(on, render = true) {
       const riskSource = riskVehicle();
+      const nowMs = simulatedNowMs();
+      const suppressed = !!(on && state.riskDismissedUntil && nowMs < state.riskDismissedUntil);
+      const visible = !!(on && !suppressed);
       const wasRisk = !!riskSource.risk;
-      riskSource.risk = on;
+      riskSource.risk = visible;
       // TEMP_HIGH alert is intentionally bound to state.riskVehicleId.
       // If the demo risk target changes, this text follows that vehicle instead of a stale hardcoded name.
       // The 3-minute scenario duration is simulation logic only; the screen banner stays concise.
       $("toastText").textContent = `온도 상승 오류 · ${riskSource.plate} · 특장 온도 ${Number(riskSource.temp || 0).toFixed(1)}℃ · 기준 8℃ 초과`;
-      $("toast").classList.toggle("show", on);
-      document.body.classList.toggle("risk-banner-active", on);
-      state.risk = on;
-      if (wasRisk !== on) recordTempEvent(riskSource, on ? "risk" : "resolved", simulatedNowMs());
+      $("toast").classList.toggle("show", visible);
+      document.body.classList.toggle("risk-banner-active", visible);
+      state.risk = visible;
+      if (wasRisk !== visible && !suppressed) recordTempEvent(riskSource, visible ? "risk" : "resolved", nowMs);
       updateMapData();
       if (render) renderSide();
     }
@@ -1529,6 +1582,7 @@
       if (log) logApi("PATCH", `${CLEVER_SERVER}/demo/simulation/update-level`, { level: state.speedLevel, timeScale: timeScale(), realBatchIntervalMs: batchIntervalMs(), fixedSpeedKph: FIXED_SPEED_KPH });
     }
     function triggerRiskNow() {
+      state.riskDismissedUntil = 0;
       state.forcedRisk = true; state.forcedRiskStartedAt = simulatedNowMs();
       riskVehicle().temp = Math.max(riskVehicle().temp, 8.4);
       setRisk(true);
@@ -1544,7 +1598,7 @@
       restartTimer();
     }
     function reset() {
-      clearInterval(state.timer); state.timer = null; state.running = false; state.forcedRisk = false; state.forcedRiskStartedAt = 0; state.batchNo = 0; state.lastSampleAt = 0; $("startBtn").classList.add("primary"); $("startBtn").classList.remove("danger"); $("startBtn").textContent = "Start Simulation";
+      clearInterval(state.timer); state.timer = null; state.running = false; state.forcedRisk = false; state.forcedRiskStartedAt = 0; state.riskDismissedUntil = 0; state.batchNo = 0; state.lastSampleAt = 0; $("startBtn").classList.add("primary"); $("startBtn").classList.remove("danger"); $("startBtn").textContent = "Start Simulation";
       state.destinationCollapsed = false;
       applyAllScenarios(Date.now(), true);
       state.selectedVehicleId = "depart01"; state.selectedStopNo = 1;
@@ -1556,6 +1610,8 @@
     $("view3dBtn").addEventListener("click", () => setMapView("3d"));
     $("startBtn").addEventListener("click", start);
     $("resetBtn").addEventListener("click", reset);
+    $("riskInspectBtn").addEventListener("click", inspectRiskVehicle);
+    $("riskDismissBtn").addEventListener("click", clearRiskLog);
     $("speedLevel").addEventListener("input", () => updateSpeedLevel(false));
     $("speedLevel").addEventListener("change", () => updateSpeedLevel(true));
     applyAllScenarios(Date.now(), true);
