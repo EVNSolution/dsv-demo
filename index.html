@@ -294,6 +294,8 @@
     const SAMPLE_MS = 500;
     const BATCH_MS = 1000;
     const DEFAULT_DWELL_MINUTES = 5;
+    const TEMP_RISK_DELAY_MS = 10 * 1000;
+    const TEMP_RISK_DURATION_MS = 3 * 60 * 1000;
     const TIME_SCALES = [0, .2, .4, .6, .8, 1, 4, 8, 12, 16, 20];
     const SPEED_WORDS = ["정지", "저속", "저속", "완만", "보통", "표준", "4x", "8x", "12x", "16x", "20x"];
     const medicalCargo = ["백신 바이알", "인슐린 펜", "항암 주사제", "혈액응고검사 시약", "검체 운송 튜브", "수액 세트", "냉장 항생제", "진단키트", "멸균 주사기", "처방 의약품 박스", "임상시험 검체", "온도기록계 동봉"];
@@ -326,6 +328,13 @@
       if (dwell > 0) return `정차, 상품 하차 중 · ${formatDuration(dwell)}`;
       const nextStop = vehicle.stops[Math.min(vehicle.done, vehicle.stops.length - 1)] || vehicle.stops.at(-1);
       return `이동 중: ${nextStop.name}`;
+    }
+    function vehicleMetaText(vehicle) {
+      return vehicle.risk ? `${vehicleMotionText(vehicle)} · 온도 ${Number(vehicle.temp || 0).toFixed(1)}℃` : vehicleMotionText(vehicle);
+    }
+    function riskStopNo(vehicle) {
+      if (!vehicle.risk) return 0;
+      return dwellRemainingMs(vehicle) > 0 ? vehicle.done : Math.max(vehicle.done + 1, 2);
     }
     function selectedStop() { return selectedVehicle().stops[state.selectedStopNo - 1] || selectedVehicle().stops[0]; }
     function riskVehicle() { return vehicles.find((vehicle) => vehicle.id === state.riskVehicleId) || vehicles[0]; }
@@ -378,13 +387,15 @@
     }
     function updateVehicleDistance(vehicle, sampleAtMs) {
       if (sampleAtMs < vehicle.waitUntil) return;
+      if (vehicle.waitUntil && sampleAtMs >= vehicle.waitUntil) { vehicle.waitUntil = 0; vehicle.arrivedAt = 0; }
       if (timeScale() <= 0) return;
       vehicle.meters += vehicle.speedMps * (SAMPLE_MS / 1000);
       const stops = stopMeters(vehicle);
       const arrived = stops.findIndex((m, i) => i + 1 > vehicle.done && vehicle.meters >= m);
       // Arrival signal: when the vehicle crosses the next stop meter, dwell for the configurable unloading time.
       // The vehicle-list pill and destination ETA list are recalculated from the new current stop after this signal.
-      if (arrived !== -1) { vehicle.done = arrived + 1; vehicle.waitUntil = sampleAtMs + stopDwellMs(); vehicle.meters = stops[arrived]; }
+      // Temperature simulation starts 10 demo seconds after this arrival signal and stays visible for 3 demo minutes.
+      if (arrived !== -1) { vehicle.done = arrived + 1; vehicle.arrivedAt = sampleAtMs; vehicle.waitUntil = sampleAtMs + stopDwellMs(); vehicle.meters = stops[arrived]; }
       vehicle.meters = Math.min(vehicle.meters, routeStats(routeOf(vehicle)).total);
     }
     function vehiclePosition(vehicle) { return pointAtMeters(routeOf(vehicle), vehicle.meters); }
@@ -637,7 +648,7 @@
     function renderFleet() {
       $("fleetList").innerHTML = vehicles.map((vehicle) => `
         <div class="row ${vehicle.id === state.selectedVehicleId ? "active" : ""} ${vehicle.risk ? "risk" : ""}" data-vehicle="${vehicle.id}">
-          <div><div class="vehicle-line">${vehicle.plate}</div><div class="row-meta">${vehicleMotionText(vehicle)}</div></div>
+          <div><div class="vehicle-line">${vehicle.plate}</div><div class="row-meta">${vehicleMetaText(vehicle)}</div></div>
           <span class="chip ${vehicle.risk ? "risk" : vehicle.id === state.selectedVehicleId ? "green" : ""}">${etaText(vehicle)}</span>
         </div>`).join("");
       document.querySelectorAll("#fleetList [data-vehicle]").forEach((row) => {
@@ -662,7 +673,7 @@
       destinationList.innerHTML = vehicle.stops.map((stop) => {
         const done = stop.no <= vehicle.done;
         const active = stop.no === state.selectedStopNo;
-        const risk = vehicle.risk && stop.no === Math.max(vehicle.done + 1, 2);
+        const risk = stop.no === riskStopNo(vehicle);
         return `<div class="t ${done ? "done" : active ? "now" : ""} ${active ? "active" : ""} ${risk ? "risk" : ""}" data-stop="${stop.no}"><i>${stop.no}</i><span>${stop.name}</span><b>${etaList[stop.no - 1]}</b></div>`;
       }).join("");
       document.querySelectorAll("#destinationList [data-stop]").forEach((row) => row.addEventListener("click", () => selectDestination(Number(row.dataset.stop))));
@@ -731,7 +742,7 @@
         routeNext: routeFeature(remainingRoute(routeOf(selected), selected.meters)),
         stops: fc(vehicles.flatMap((vehicle) => vehicle.stops.map((stop) => pointFeature(stop.coord, {
           vehicleId: vehicle.id, stopNo: stop.no, label: String(stop.no), pinImage: stopPinImage(vehicle, stop, selected), selected: vehicle.id === selected.id, active: vehicle.id === selected.id && stop.no === state.selectedStopNo,
-          done: stop.no <= vehicle.done, risk: !!vehicle.risk && stop.no === Math.max(vehicle.done + 1, 2)
+          done: stop.no <= vehicle.done, risk: stop.no === riskStopNo(vehicle)
         })))),
         dropoffs: fc(vehicles.flatMap((vehicle) => dropoffsOf(vehicle).flatMap((coord, i) => {
           if (i + 1 <= vehicle.done) return [];
@@ -741,7 +752,7 @@
       };
     }
     function stopPinImage(vehicle, stop, selected) {
-      if (vehicle.risk && stop.no === Math.max(vehicle.done + 1, 2)) return "stop-pin-risk";
+      if (stop.no === riskStopNo(vehicle)) return "stop-pin-risk";
       if (stop.no <= vehicle.done) return "stop-pin-done";
       return vehicle.id === selected.id ? "stop-pin-selected" : "stop-pin-default";
     }
@@ -904,21 +915,29 @@
       const riskSource = riskVehicle(); riskSource.risk = on;
       // TEMP_HIGH alert is intentionally bound to state.riskVehicleId.
       // If the demo risk target changes, this text follows that vehicle instead of a stale hardcoded name.
-      $("toastText").textContent = `${riskSource.plate} 특장 온도기록계가 기준 8℃를 초과했습니다. 차량 리스트에 위험 표기합니다.`;
+      $("toastText").textContent = `${riskSource.plate} 정차 후 특장 온도기록계가 기준 8℃를 초과했습니다. 현재 ${Number(riskSource.temp || 0).toFixed(1)}℃, 3분 동안 위험 표기합니다.`;
       $("toast").classList.toggle("show", on);
+      state.risk = on;
       updateMapData();
       if (render) renderSide();
     }
+    function temperatureSample(time) {
+      const vehicle = riskVehicle();
+      const baseTemp = vehicle.baseTemp || 4.8;
+      if (state.forcedRisk) return { temp: Math.max(vehicle.temp || baseTemp, 8.4), risk: true, phase: "manual" };
+      const sinceArrival = vehicle.arrivedAt ? time - vehicle.arrivedAt : -1;
+      const riskElapsed = sinceArrival - TEMP_RISK_DELAY_MS;
+      const active = riskElapsed >= 0 && riskElapsed < TEMP_RISK_DURATION_MS;
+      if (!active) return { temp: baseTemp, risk: false, phase: sinceArrival >= 0 && sinceArrival < TEMP_RISK_DELAY_MS ? "arrival-wait" : "normal" };
+      const progress = Math.min(1, riskElapsed / TEMP_RISK_DURATION_MS);
+      return { temp: 8.4 + progress * 2.6, risk: true, phase: "arrival-temperature-rise" };
+    }
     function sampleAt(time) {
       const elapsed = Math.max(0, (time - state.simStartedAt) / 1000);
-      const risk = state.forcedRisk || elapsed >= 20;
-      const temp = risk ? Math.max(4.2 + elapsed * 0.2, 8.4) : 4.2 + elapsed * 0.2;
       return {
         at: new Date(time).toISOString(),
         p: Math.min(.9, .03 + elapsed / 240),
-        eta: new Date(Date.now() + Math.max(1, 12 - Math.floor(elapsed / 30)) * 60000).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-        temp: Number(temp.toFixed(1)),
-        risk
+        eta: new Date(Date.now() + Math.max(1, 12 - Math.floor(elapsed / 30)) * 60000).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })
       };
     }
     function nextBatch() {
@@ -927,9 +946,16 @@
       return Array.from({ length: BATCH_MS / SAMPLE_MS }, (_, i) => sampleAt(base + (i + 1) * SAMPLE_MS));
     }
     function applyBatch(batch) {
-      const step = batch.at(-1);
       const riskSource = riskVehicle();
-      batch.forEach((sample) => vehicles.forEach((vehicle) => updateVehicleDistance(vehicle, Date.parse(sample.at))));
+      batch.forEach((sample) => {
+        const sampleMs = Date.parse(sample.at);
+        vehicles.forEach((vehicle) => updateVehicleDistance(vehicle, sampleMs));
+        const temperature = temperatureSample(sampleMs);
+        sample.temp = Number(temperature.temp.toFixed(1));
+        sample.risk = temperature.risk;
+        sample.temperaturePhase = temperature.phase;
+      });
+      const step = batch.at(-1);
       state.lastSampleAt = Date.parse(step.at);
       riskSource.eta = step.eta; riskSource.temp = step.temp;
       // Simulation keeps wall-clock ETA text for detail cards, but vehicle-list ETA uses live remaining seconds.
@@ -970,9 +996,9 @@
     function reset() {
       clearInterval(state.timer); state.timer = null; state.running = false; state.forcedRisk = false; state.batchNo = 0; state.lastSampleAt = 0; $("startBtn").classList.add("primary"); $("startBtn").classList.remove("danger"); $("startBtn").textContent = "Start Simulation";
       state.destinationCollapsed = false;
-      vehicles[0].meters = 0; vehicles[0].eta = "14:06"; vehicles[0].temp = 4.2; vehicles[0].done = 1; vehicles[0].risk = false; vehicles[0].waitUntil = 0;
-      vehicles[1].meters = 900; vehicles[1].done = 2; vehicles[1].waitUntil = 0;
-      vehicles[2].meters = 500; vehicles[2].done = 1; vehicles[2].waitUntil = 0;
+      vehicles[0].meters = 0; vehicles[0].eta = "14:06"; vehicles[0].temp = 4.2; vehicles[0].done = 1; vehicles[0].risk = false; vehicles[0].waitUntil = 0; vehicles[0].arrivedAt = 0;
+      vehicles[1].meters = 900; vehicles[1].done = 2; vehicles[1].risk = false; vehicles[1].waitUntil = 0; vehicles[1].arrivedAt = 0;
+      vehicles[2].meters = 500; vehicles[2].done = 1; vehicles[2].risk = false; vehicles[2].waitUntil = 0; vehicles[2].arrivedAt = 0;
       state.selectedVehicleId = "cj02"; state.selectedStopNo = 2;
       setRisk(false, false); renderSide(); updateMapData();
     }
