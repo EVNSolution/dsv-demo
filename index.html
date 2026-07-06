@@ -193,12 +193,19 @@
     .fleet, .stops { display: grid; gap: 8px; margin-top: 12px; }
     #fleetList { max-height: 360px; overflow-y: auto; padding-right: 4px; }
     #destinationList { max-height: 184px; overflow-y: auto; padding-right: 4px; }
-    .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 17px; border: 1px solid var(--hairline); background: #fff; cursor: pointer; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 17px; border: 1px solid var(--hairline); border-left-width: 4px; background: #fff; cursor: pointer; }
     .row.active { border-color: rgba(0,102,204,.24); background: var(--blue-soft); }
-    .row.risk { border-color: rgba(217,45,32,.32); background: var(--risk-soft); }
+    .row.status-loading { border-left-color: #fff; background: #fff; }
+    .row.status-moving { border-color: rgba(0,102,204,.22); border-left-color: var(--blue); background: rgba(232,242,255,.74); }
+    .row.status-dwell, .row.status-completed { border-color: rgba(31,139,76,.22); border-left-color: var(--green); background: rgba(233,247,239,.78); }
+    .row.risk { border-color: rgba(217,45,32,.32); border-left-color: var(--risk); background: var(--risk-soft); }
     .row .chip { min-height: 24px; padding: 0 9px; font-size: 11px; }
     .plate { width: 54px; height: 42px; border-radius: 13px; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 800; line-height: 1.05; }
     .vehicle-line { display: inline-flex; align-items: center; gap: 6px; font-weight: 900; letter-spacing: -.03em; }
+    .status-pill { min-height: 19px; padding: 0 7px; border-radius: 999px; display: inline-flex; align-items: center; border: 1px solid var(--hairline); background: #fff; color: var(--muted); font-size: 10px; font-weight: 1000; letter-spacing: -.03em; }
+    .status-pill.moving { border-color: transparent; background: var(--blue); color: #fff; }
+    .status-pill.dwell, .status-pill.completed { border-color: transparent; background: var(--green); color: #fff; }
+    .status-pill.loading { border-color: #d1d5db; background: #fff; color: #3a3a3c; }
     .alert-dot { width: 18px; height: 18px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--risk); color: #fff; font-size: 12px; font-weight: 1000; line-height: 1; box-shadow: 0 0 0 3px var(--risk-soft); }
     .row-title { font-weight: 800; letter-spacing: -.02em; }
     .row-meta { color: var(--muted); font-size: 11px; margin-top: 0; }
@@ -439,6 +446,24 @@
     }
     function vehicleMotionText(vehicle) { return vehicleLocationText(vehicle); }
     function vehicleMetaText(vehicle) { return vehicleLocationText(vehicle); }
+    function vehicleStatus(vehicle) {
+      if (vehicle.completed) return { key: "completed", label: "완료" };
+      const departureLeft = departureRemainingMs(vehicle);
+      if (departureLeft === Infinity || departureLeft > 0 || (vehicle.done === 0 && (vehicle.meters || 0) < 10)) return { key: "loading", label: "상차" };
+      if (dwellRemainingMs(vehicle) > 0) return { key: "dwell", label: "정차" };
+      return { key: "moving", label: "배송중" };
+    }
+    function statusBadge(vehicle) {
+      const status = vehicleStatus(vehicle);
+      return `<span class="status-pill ${status.key}" data-status-pill>${status.label}</span>`;
+    }
+    function etaChipClass(vehicle) {
+      const status = vehicleStatus(vehicle).key;
+      if (vehicle.risk) return "chip risk";
+      if (status === "moving") return "chip blue";
+      if (status === "dwell" || status === "completed") return "chip green";
+      return "chip";
+    }
     function riskStopNo(vehicle) {
       if (!vehicle.risk) return 0;
       return dwellRemainingMs(vehicle) > 0 ? vehicle.done : Math.max(vehicle.done + 1, 2);
@@ -911,7 +936,7 @@
       const stop = selectedStop();
       $("sideContent").innerHTML = `
           <section class="card panel expand-card ${state.vehiclePanelOpen ? "expanded" : ""}" id="vehicleCard">
-            <aside class="left-expansion temperature-expansion" aria-label="차량 온도 변화">${temperaturePanel(vehicle)}</aside>
+            <aside class="left-expansion temperature-expansion" id="temperaturePanel" aria-label="차량 온도 변화">${temperaturePanel(vehicle)}</aside>
             <div class="tab-line"><span>차량 리스트</span><span class="card-tools"><span class="chip mini">${vehicles.length}대 시나리오</span><button class="panel-toggle ${state.vehiclePanelOpen ? "active" : ""}" id="vehiclePanelToggle" type="button">${state.vehiclePanelOpen ? "닫기" : "온도"}</button></span></div>
             <div class="fleet" id="fleetList"></div>
           </section>
@@ -1133,9 +1158,9 @@
     function alertBadge(vehicle) { return vehicle.unacknowledgedRisk ? `<span class="alert-dot" aria-label="미확인 온도 오류">!</span>` : ""; }
     function renderFleet() {
       $("fleetList").innerHTML = sortedVehicles().map((vehicle) => `
-        <div class="row ${vehicle.id === state.selectedVehicleId ? "active" : ""} ${vehicle.risk ? "risk" : ""}" data-vehicle="${vehicle.id}">
-          <div><div class="vehicle-line"><span class="plate-text">${vehicle.plate}</span>${alertBadge(vehicle)}</div><div class="row-meta">${vehicleMetaText(vehicle)}</div></div>
-          <span class="chip ${vehicle.risk ? "risk" : vehicle.id === state.selectedVehicleId ? "green" : ""}">${etaText(vehicle)}</span>
+        <div class="row status-${vehicleStatus(vehicle).key} ${vehicle.id === state.selectedVehicleId ? "active" : ""} ${vehicle.risk ? "risk" : ""}" data-vehicle="${vehicle.id}">
+          <div><div class="vehicle-line"><span class="plate-text">${vehicle.plate}</span>${statusBadge(vehicle)}${alertBadge(vehicle)}</div><div class="row-meta">${vehicleMetaText(vehicle)}</div></div>
+          <span class="${etaChipClass(vehicle)}">${etaText(vehicle)}</span>
         </div>`).join("");
       document.querySelectorAll("#fleetList [data-vehicle]").forEach((row) => {
         const pickVehicle = () => selectVehicle(row.dataset.vehicle, null, false);
@@ -1180,7 +1205,7 @@
       return renderControlPage();
     }
     function updateChipClass(chip, vehicle) {
-      chip.className = `chip ${vehicle.risk ? "risk" : vehicle.id === state.selectedVehicleId ? "green" : ""}`.trim();
+      chip.className = etaChipClass(vehicle);
     }
     function syncAlertBadge(row, vehicle) {
       const line = row.querySelector(".vehicle-line");
@@ -1188,6 +1213,16 @@
       const badge = line.querySelector(".alert-dot");
       if (vehicle.unacknowledgedRisk && !badge) line.insertAdjacentHTML("beforeend", alertBadge(vehicle));
       if (!vehicle.unacknowledgedRisk && badge) badge.remove();
+    }
+    function syncVehicleStatus(row, vehicle) {
+      const status = vehicleStatus(vehicle);
+      row.classList.remove("status-loading", "status-moving", "status-dwell", "status-completed");
+      row.classList.add(`status-${status.key}`);
+      const pill = row.querySelector("[data-status-pill]");
+      if (pill) {
+        pill.className = `status-pill ${status.key}`;
+        pill.textContent = status.label;
+      }
     }
     function reorderFleetRows() {
       const fleet = $("fleetList");
@@ -1205,6 +1240,14 @@
       if (vehiclePanel && state.vehiclePanelOpen) vehiclePanel.innerHTML = temperaturePanel(vehicle);
       const notePanel = document.querySelector("#destinationCard .left-expansion");
       if (notePanel && state.destinationNoteOpen) notePanel.innerHTML = destinationNotePanel(vehicle, stop);
+    }
+    function patchLiveTemperaturePanel() {
+      if (state.activeTab !== "control" || !state.vehiclePanelOpen) return;
+      const panel = $("temperaturePanel");
+      if (!panel) return;
+      const scrollTop = panel.scrollTop;
+      panel.innerHTML = temperaturePanel(selectedVehicle());
+      panel.scrollTop = scrollTop;
     }
     function refreshControlSelection(vehicleChanged = false) {
       if (state.activeTab !== "control") return renderSide();
@@ -1264,6 +1307,7 @@
       vehicles.forEach((vehicle) => {
         const row = fleet.querySelector(`[data-vehicle="${vehicle.id}"]`);
         if (!row) return;
+        syncVehicleStatus(row, vehicle);
         row.classList.toggle("active", vehicle.id === state.selectedVehicleId);
         row.classList.toggle("risk", !!vehicle.risk);
         syncAlertBadge(row, vehicle);
@@ -1298,9 +1342,10 @@
       });
     }
     function renderLivePanels() {
-      // Telemetry ticks must not rebuild side-panel HTML. Rebuilding destroyed row DOM/events at every
-      // GPS update, which looked like list refresh and made rows hard to select at high demo speeds.
+      // Telemetry ticks must not rebuild fleet/destination list HTML. Rebuilding those rows destroyed
+      // DOM/events at every GPS update. The open temperature panel is the only live-redrawn detail view.
       patchLiveControlPanel();
+      patchLiveTemperaturePanel();
     }
 
     async function fetchOsrmRoute(vehicle) {
