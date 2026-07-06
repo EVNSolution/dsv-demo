@@ -531,7 +531,13 @@
     function routeFeature(coords, props = {}) { return { type: "Feature", properties: props, geometry: { type: "LineString", coordinates: coords } }; }
     function pointFeature(coord, props = {}) { return { type: "Feature", properties: props, geometry: { type: "Point", coordinates: coord } }; }
     function routeWaypoints(vehicle) { return [ORIGIN.coord, ...vehicle.stops.map((stop) => stop.coord)]; }
-    function routeOf(vehicle) { return state.routes[vehicle.id] || routeWaypoints(vehicle); }
+    function routeReady(vehicle) { return (state.routes[vehicle.id] || []).length > 1; }
+    function routeOf(vehicle) {
+      // Internal simulation can keep using waypoint math while OSRM is loading,
+      // but map route layers must wait for routeReady() so no temporary straight lines appear.
+      const route = state.routes[vehicle.id];
+      return route?.length > 1 ? route : routeWaypoints(vehicle);
+    }
     function dropoffsOf(vehicle) { return state.dropoffs[vehicle.id] || vehicle.stops.map((stop) => stop.coord); }
     function metersBetween(a, b) {
       const r = 6371000, toRad = (n) => n * Math.PI / 180;
@@ -1034,8 +1040,9 @@
           logApi("GET", url, { vehicle: vehicle.id, fallback: true, message: String(error.message || error) }, "pending");
         }
       }
-      const result = { route: routeWaypoints(vehicle), dropoffs: vehicle.stops.map((stop) => stop.coord) };
+      const result = { route: [], dropoffs: vehicle.stops.map((stop) => stop.coord) };
       routeCache.set(coords, result);
+      logApi("GET", "OSRM", { vehicle: vehicle.id, routeLayer: "withheld", reason: "no-osrm-route" }, "pending");
       return result;
     }
     async function hydrateRoutes() {
@@ -1058,11 +1065,12 @@
 
     function mapData() {
       const selected = selectedVehicle();
+      const selectedMapRoute = routeReady(selected) ? state.routes[selected.id] : null;
       return {
         origin: fc([pointFeature(ORIGIN.coord, { label: "상차", name: ORIGIN.name })]),
-        routes: fc(vehicles.map((vehicle) => routeFeature(routeOf(vehicle), { vehicleId: vehicle.id, selected: vehicle.id === selected.id }))),
-        routeDone: routeFeature(completedRoute(routeOf(selected), selected.meters)),
-        routeNext: routeFeature(remainingRoute(routeOf(selected), selected.meters)),
+        routes: fc(vehicles.flatMap((vehicle) => routeReady(vehicle) ? [routeFeature(state.routes[vehicle.id], { vehicleId: vehicle.id, selected: vehicle.id === selected.id })] : [])),
+        routeDone: selectedMapRoute ? routeFeature(completedRoute(selectedMapRoute, selected.meters)) : fc([]),
+        routeNext: selectedMapRoute ? routeFeature(remainingRoute(selectedMapRoute, selected.meters)) : fc([]),
         stops: fc(vehicles.flatMap((vehicle) => vehicle.stops.map((stop) => pointFeature(stop.coord, {
           vehicleId: vehicle.id, stopNo: stop.no, label: String(stop.no), pinImage: stopPinImage(vehicle, stop, selected), selected: vehicle.id === selected.id, active: vehicle.id === selected.id && stop.no === state.selectedStopNo,
           done: stop.no <= vehicle.done, risk: stop.no === riskStopNo(vehicle)
