@@ -134,6 +134,7 @@
     .record-scroll .page-table { margin-top:0; }
     .record-row { cursor:pointer; }
     .record-row:hover, .record-row.active { background:var(--blue-soft); }
+    .setting-input { width:110px; min-height:34px; border:1px solid var(--hairline); border-radius:12px; padding:0 10px; font:inherit; }
     .destination-list { display:grid; gap:10px; margin-top:14px; }
     .destination-button { width:100%; border:1px solid var(--hairline); border-radius:16px; background:#fff; padding:8px 12px; text-align:left; cursor:pointer; display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; }
     .destination-button.active { border-color:rgba(0,102,204,.28); background:var(--blue-soft); }
@@ -564,29 +565,30 @@
     }
 
     function renderSettingsPage() {
-      renderPage("설정", "운영 기준값을 확인하는 읽기 전용 설정 페이지입니다.", `
+      renderPage("설정", "알림 기준을 임시로 조정합니다. 새로고침하면 기본값으로 돌아갑니다.", `
         <div class="page-grid">
           <section class="page-panel">
-            <div class="tab-line"><span>알림 기준</span><span class="chip risk">8℃</span></div>
+            <div class="tab-line"><span>알림 기준</span><span class="chip amber">임시 저장</span></div>
             <table class="page-table"><tbody>
-              <tr><th>온도 상한</th><td>8℃</td></tr>
-              <tr><th>ETA 지연</th><td>10분 이상</td></tr>
-              <tr><th>GPS 미수신</th><td>30초</td></tr>
+              <tr><th>특장 온도 상한</th><td><input class="setting-input" type="number" value="8" step="0.5"> ℃</td></tr>
+              <tr><th>ETA 지연 알림</th><td><input class="setting-input" type="number" value="10"> 분 이상</td></tr>
+              <tr><th>GPS 미수신 알림</th><td><input class="setting-input" type="number" value="30"> 초 이상</td></tr>
+              <tr><th>도착 후 대기시간</th><td><input class="setting-input" type="number" value="10"> 분</td></tr>
             </tbody></table>
           </section>
           <section class="page-panel">
-            <div class="tab-line"><span>고객 권한</span><span class="chip blue">분리</span></div>
+            <div class="tab-line"><span>알림 수신</span><span class="chip blue">운영</span></div>
             <table class="page-table"><tbody>
-              <tr><th>주문/ETA</th><td>본인 건만 노출</td></tr>
-              <tr><th>POD/인수증</th><td>고객사별 분리</td></tr>
-              <tr><th>혼적 배송</th><td>타 고객 정보 마스킹</td></tr>
+              <tr><th>온도 경고</th><td><label><input type="checkbox" checked> 관제 화면 표시</label></td></tr>
+              <tr><th>배송 지연</th><td><label><input type="checkbox" checked> 배송원에게 전달</label></td></tr>
+              <tr><th>증빙 누락</th><td><label><input type="checkbox" checked> 기록 페이지에 표시</label></td></tr>
             </tbody></table>
           </section>
           <section class="page-panel wide">
-            <div class="tab-line"><span>지도 및 경로</span><span class="chip mini">미정</span></div>
+            <div class="tab-line"><span>안내</span><span class="chip mini">데모</span></div>
             <table class="page-table"><tbody>
-              <tr><th>지도</th><td>OpenFreeMap Liberty</td><th>기본 뷰</th><td>${state.viewMode.toUpperCase()}</td></tr>
-              <tr><th>경로</th><td>Clever server OSRM 우선</td><th>Fallback</th><td>public OSRM</td></tr>
+              <tr><th>저장 방식</th><td>현재 화면에서만 유지됩니다.</td></tr>
+              <tr><th>초기화</th><td>새로고침하면 기본 하드코딩 값으로 돌아갑니다.</td></tr>
             </tbody></table>
           </section>
         </div>`);
