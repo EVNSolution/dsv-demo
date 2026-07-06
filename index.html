@@ -40,6 +40,9 @@
     }
     h1 { margin: 0; font-size: clamp(22px, 2.4vw, 34px); line-height: 1.05; letter-spacing: -.045em; white-space: nowrap; }
     .controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .speed-control { margin-top: 8px; display: grid; grid-template-columns: auto minmax(210px, 1fr) auto auto; gap: 8px; align-items: center; color: var(--muted); font-size: 11px; font-weight: 900; letter-spacing: -.02em; }
+    .speed-control input { width: 100%; accent-color: var(--ink); }
+    .speed-control b { min-width: 34px; color: var(--ink); text-align: right; }
     .left-tabs {
       position: absolute; left: 20px; top: 118px; transform: none; z-index: 6;
       width: 76px; padding: 8px 6px; display: grid; gap: 8px; align-content: start;
@@ -206,6 +209,9 @@
     <header class="top">
       <div>
         <h1>Clever - DSV Demo</h1>
+        <label class="speed-control" aria-label="업데이트 레벨">
+          <span>0</span><input id="speedLevel" type="range" min="0" max="10" step="1" value="5"><span>최고속도</span><b id="speedText">표준</b>
+        </label>
       </div>
       <div class="controls" aria-label="데모 컨트롤">
         <div class="segmented" aria-label="지도 보기 방식">
@@ -273,7 +279,7 @@
       }
     ].map((vehicle) => ({ ...vehicle, stops: vehicle.stops.map(([name, coord], i) => ({ no: i + 1, name, coord })) }));
 
-    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, forcedRisk: false, risk: false, viewMode: "2d", activeTab: "control", destinationCollapsed: false, workAction: "", uploadPreview: false, selectedRecordIndex: 0, riskVehicleId: "cj02", map: null, selectedVehicleId: "cj02", selectedStopNo: 2, routes: {}, dropoffs: {} };
+    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, forcedRisk: false, risk: false, speedLevel: 5, viewMode: "2d", activeTab: "control", destinationCollapsed: false, workAction: "", uploadPreview: false, selectedRecordIndex: 0, riskVehicleId: "cj02", map: null, selectedVehicleId: "cj02", selectedStopNo: 2, routes: {}, dropoffs: {} };
     const demoLogs = [];
     window.demoLogs = demoLogs;
     const tabs = {
@@ -285,6 +291,7 @@
     const SAMPLE_MS = 500;
     const BATCH_MS = 1000;
     const STOP_DWELL_MS = 10 * 60 * 1000;
+    const SPEED_WORDS = ["정지", "저속", "저속", "완만", "보통", "표준", "빠름", "고속", "고속", "최고", "최고"];
     const medicalCargo = ["백신 바이알", "인슐린 펜", "항암 주사제", "혈액응고검사 시약", "검체 운송 튜브", "수액 세트", "냉장 항생제", "진단키트", "멸균 주사기", "처방 의약품 박스", "임상시험 검체", "온도기록계 동봉"];
 
     function now() { return new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date()); }
@@ -295,6 +302,8 @@
       if (DEBUG_LOGS) console.debug(`[Clever - DSV Demo] ${entry.method} ${entry.url} ${JSON.stringify(entry.payload)}`);
     }
     function selectedVehicle() { return vehicles.find((vehicle) => vehicle.id === state.selectedVehicleId) || vehicles[0]; }
+    function speedFactor() { return state.speedLevel / 5; }
+    function effectiveSpeed(vehicle) { return vehicle.speedMps * speedFactor(); }
     function selectedStop() { return selectedVehicle().stops[state.selectedStopNo - 1] || selectedVehicle().stops[0]; }
     function riskVehicle() { return vehicles.find((vehicle) => vehicle.id === state.riskVehicleId) || vehicles[0]; }
     function fc(features) { return { type: "FeatureCollection", features }; }
@@ -346,7 +355,7 @@
     }
     function updateVehicleDistance(vehicle, sampleAtMs) {
       if (sampleAtMs < vehicle.waitUntil) return;
-      vehicle.meters += vehicle.speedMps * (SAMPLE_MS / 1000);
+      vehicle.meters += effectiveSpeed(vehicle) * (SAMPLE_MS / 1000);
       const stops = stopMeters(vehicle);
       const arrived = stops.findIndex((m, i) => i + 1 > vehicle.done && vehicle.meters >= m);
       // Arrival signal: when the vehicle crosses the next stop meter, dwell for 10 demo minutes.
@@ -356,19 +365,22 @@
     }
     function vehiclePosition(vehicle) { return pointAtMeters(routeOf(vehicle), vehicle.meters); }
     function etaText(vehicle) {
+      const speed = effectiveSpeed(vehicle);
+      if (speed <= 0) return "정지";
       const target = stopMeters(vehicle)[Math.min(vehicle.done, vehicle.stops.length - 1)] || routeStats(routeOf(vehicle)).total;
-      const remainingSeconds = Math.max(0, Math.round((target - vehicle.meters) / vehicle.speedMps));
+      const remainingSeconds = Math.max(0, Math.round((target - vehicle.meters) / speed));
       const minutes = Math.floor(remainingSeconds / 60);
       const seconds = remainingSeconds % 60;
       return minutes ? `${minutes}분 ${String(seconds).padStart(2, "0")}초` : `${seconds}초`;
     }
     function stopEtaList(vehicle) {
       let seconds = 0;
-      const stops = stopMeters(vehicle);
+      const stops = stopMeters(vehicle), speed = effectiveSpeed(vehicle);
       return stops.map((meters, i) => {
         if (i + 1 <= vehicle.done) return "완료";
+        if (speed <= 0) return "대기";
         const previous = i === 0 ? vehicle.meters : stops[i - 1];
-        seconds += Math.max(0, (meters - previous) / vehicle.speedMps);
+        seconds += Math.max(0, (meters - previous) / speed);
         if (i + 1 > Math.max(vehicle.done + 1, 1)) seconds += STOP_DWELL_MS / 1000;
         const at = new Date(Date.now() + seconds * 1000);
         return at.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
@@ -835,10 +847,16 @@
       riskSource.eta = step.eta; riskSource.temp = step.temp;
       // Simulation keeps wall-clock ETA text for detail cards, but vehicle-list ETA uses live remaining seconds.
       setRisk(!!step.risk);
-      logApi("POST", `${CLEVER_SERVER}/demo/gps-temperature/batch`, { intervalSec: 0.5, count: batch.length, samples: batch }, step.risk ? "risk" : "");
+      logApi("POST", `${CLEVER_SERVER}/demo/gps-temperature/batch`, { intervalSec: 0.5, updateLevel: state.speedLevel, speedFactor: Number(speedFactor().toFixed(1)), count: batch.length, samples: batch }, step.risk ? "risk" : "");
       if (step.risk) logApi("POST", `${CLEVER_SERVER}/demo/alerts/evaluate`, { alert: "TEMP_HIGH", surfaced: ["toast", "vehicle", "fleet-list", "map-layer"] }, "risk");
     }
     function runBatch() { applyBatch(nextBatch()); }
+    function updateSpeedLevel(log = false) {
+      state.speedLevel = Number($("speedLevel").value);
+      $("speedText").textContent = SPEED_WORDS[state.speedLevel] || `${state.speedLevel}단계`;
+      renderSide();
+      if (log) logApi("PATCH", `${CLEVER_SERVER}/demo/simulation/update-level`, { level: state.speedLevel, speedFactor: Number(speedFactor().toFixed(1)) });
+    }
     function triggerRiskNow() {
       state.forcedRisk = true;
       riskVehicle().temp = Math.max(riskVehicle().temp, 8.4);
@@ -849,7 +867,7 @@
       if (state.running) return triggerRiskNow();
       state.running = true; state.forcedRisk = false; state.simStartedAt = Date.now(); state.batchNo = 0;
       $("startBtn").classList.remove("primary"); $("startBtn").classList.add("danger"); $("startBtn").textContent = "Error";
-      logApi("POST", `${CLEVER_SERVER}/demo/simulation/start`, { scenario: "demo-1s-update-0.5s-samples", sampleIntervalSec: 0.5, batchIntervalSec: 1 }, "pending");
+      logApi("POST", `${CLEVER_SERVER}/demo/simulation/start`, { scenario: "demo-1s-update-0.5s-samples", sampleIntervalSec: 0.5, batchIntervalSec: 1, updateLevel: state.speedLevel, speedFactor: Number(speedFactor().toFixed(1)) }, "pending");
       state.timer = setInterval(runBatch, BATCH_MS);
     }
     function reset() {
@@ -867,6 +885,9 @@
     $("view3dBtn").addEventListener("click", () => setMapView("3d"));
     $("startBtn").addEventListener("click", start);
     $("resetBtn").addEventListener("click", reset);
+    $("speedLevel").addEventListener("input", () => updateSpeedLevel(false));
+    $("speedLevel").addEventListener("change", () => updateSpeedLevel(true));
+    updateSpeedLevel(false);
     setTab("control"); initMap();
   </script>
 </body>
