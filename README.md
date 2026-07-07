@@ -63,6 +63,21 @@ python3 -m http.server 4173 --directory .
 http://localhost:4173/
 ```
 
+## 검증
+
+Playwright 회귀 테스트를 포함합니다.
+
+```bash
+npm install
+npm test
+```
+
+검증 범위:
+
+- HTML 내부 스크립트 문법 검사
+- 배송원 / 업무 / 기록 / 설정 페이지 반응형 카드 레이아웃
+- 큰 화면 확장과 좁은 화면 스택/스크롤 동작
+
 ## 배포
 
 `main` 브랜치에 push하면 GitHub Actions가 GitHub Pages로 배포합니다.

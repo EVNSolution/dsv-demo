@@ -1,0 +1,17 @@
+{
+  "name": "clever-dsv-demo-pages",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Clever - DSV Demo GitHub Pages deployment with Playwright regression checks.",
+  "scripts": {
+    "check": "node scripts/check-demo-script.mjs",
+    "test": "npm run check && npm run test:e2e",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1"
+  }
+}
