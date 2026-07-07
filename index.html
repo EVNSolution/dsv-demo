@@ -481,6 +481,11 @@
     const STOP_PIN_PATH = "M20 50C20 50 4 31.5 4 18C4 9.16 11.16 2 20 2s16 7.16 16 16c0 13.5-16 32-16 32Z";
     const STOP_PIN_PIXEL_RATIO = 2;
     const STOP_PIN_ICON_SIZE = 0.62;
+    const VEHICLE_MARKER_PIXEL_RATIO = 2;
+    const VEHICLE_MARKER_ICON_SIZE = 0.68;
+    const VEHICLE_MARKER_DEFAULT = "#C3C6BF";
+    const VEHICLE_MARKER_SPOTLIGHT = "#DAFD54";
+    const VEHICLE_ICON_PATH = "M20 8H17V4H3C1.9 4 1 4.9 1 6V17H3C3 18.66 4.34 20 6 20C7.66 20 9 18.66 9 17H15C15 18.66 16.34 20 18 20C19.66 20 21 18.66 21 17H23V12L20 8ZM19.5 9.5L21.46 12H17V9.5H19.5ZM6 18C5.45 18 5 17.55 5 17C5 16.45 5.45 16 6 16C6.55 16 7 16.45 7 17C7 17.55 6.55 18 6 18ZM8.22 15C7.67 14.39 6.89 14 6 14C5.11 14 4.33 14.39 3.78 15H3V6H15V15H8.22ZM18 18C17.45 18 17 17.55 17 17C17 16.45 17.45 16 18 16C18.55 16 19 16.45 19 17C19 17.55 18.55 18 18 18Z";
     const FIXED_SPEED_KPH = 40;
     const FIXED_SPEED_MPS = FIXED_SPEED_KPH * 1000 / 3600;
     const DEBUG_LOGS = location.hostname === "localhost" || location.protocol === "file:" || new URLSearchParams(location.search).has("debug");
@@ -1907,7 +1912,16 @@
           if (i + 1 <= vehicle.done) return [];
           return [pointFeature(coord, { vehicleId: vehicle.id, stopNo: i + 1, label: `정차 ${i + 1}`, selected: !!selected && vehicle.id === selected.id, active: !!selected && vehicle.id === selected.id && i + 1 === state.selectedStopNo })];
         }))),
-        vehicles: fc(vehicles.map((vehicle) => pointFeature(vehiclePosition(vehicle), { vehicleId: vehicle.id, label: vehicle.plate.split(" ")[0], selected: !!selected && vehicle.id === selected.id, risk: !!vehicle.risk })))
+        vehicles: fc(vehicles.map((vehicle) => {
+          const isSpotlight = !!selected && vehicle.id === selected.id;
+          return pointFeature(vehiclePosition(vehicle), {
+            vehicleId: vehicle.id,
+            label: vehicle.plate.split(" ")[0],
+            selected: isSpotlight,
+            markerImage: isSpotlight ? "vehicle-marker-spotlight" : "vehicle-marker-default",
+            risk: !!vehicle.risk
+          });
+        }))
       };
     }
     function stopPinImage(vehicle, stop, selected) {
@@ -1948,6 +1962,48 @@
         const image = createStopPinImage(color);
         if (!image) return false;
         state.map.addImage(id, image, { pixelRatio: STOP_PIN_PIXEL_RATIO });
+        return true;
+      });
+    }
+    function createVehicleMarkerImage(color) {
+      if (typeof Path2D === "undefined") return null;
+      const size = 64 * VEHICLE_MARKER_PIXEL_RATIO;
+      const canvas = document.createElement("canvas");
+      canvas.width = size; canvas.height = size;
+      const context = canvas.getContext("2d");
+      if (!context) return null;
+      context.scale(VEHICLE_MARKER_PIXEL_RATIO, VEHICLE_MARKER_PIXEL_RATIO);
+
+      // EVN Logistics 차량 포인트는 한 개의 원형 배경만 사용한다.
+      // 이전처럼 외곽원+내부원을 겹치지 않고, 64px 캔버스의 (32, 32)에 정중앙 정렬한다.
+      context.save();
+      context.shadowBlur = 6;
+      context.shadowColor = "rgba(0, 0, 0, 0.18)";
+      context.shadowOffsetY = 2;
+      context.fillStyle = color;
+      context.beginPath();
+      context.arc(32, 32, 16, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+
+      context.save();
+      context.translate(20, 20);
+      context.fillStyle = "#000000";
+      context.fill(new Path2D(VEHICLE_ICON_PATH));
+      context.restore();
+
+      return context.getImageData(0, 0, size, size);
+    }
+    function ensureVehicleMarkerImages() {
+      const images = [
+        ["vehicle-marker-default", VEHICLE_MARKER_DEFAULT],
+        ["vehicle-marker-spotlight", VEHICLE_MARKER_SPOTLIGHT]
+      ];
+      return images.every(([id, color]) => {
+        if (state.map.hasImage(id)) return true;
+        const image = createVehicleMarkerImage(color);
+        if (!image) return false;
+        state.map.addImage(id, image, { pixelRatio: VEHICLE_MARKER_PIXEL_RATIO });
         return true;
       });
     }
@@ -2124,6 +2180,7 @@
       state.map.addSource("dropoffs", { type: "geojson", data: data.dropoffs });
       state.map.addSource("vehicles", { type: "geojson", data: data.vehicles });
       ensureStopPinImages();
+      ensureVehicleMarkerImages();
       state.map.addLayer({ id: "routes", type: "line", source: "routes", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#000000", "line-width": 1, "line-opacity": ["case", ["get", "selected"], .32, .20] } });
       state.map.addLayer({ id: "route-selected", type: "line", source: "route-selected", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#0066cc", "line-width": 4, "line-opacity": .88 } });
       state.map.addLayer({ id: "route-done", type: "line", source: "route-done", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#8e8e93", "line-width": 4.2, "line-opacity": .9 } });
@@ -2136,8 +2193,8 @@
       state.map.addLayer({ id: "stop-point-labels", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("point"), "symbol-sort-key": ["case", ["get", "active"], 4000, ["get", "selected"], 3000, ["get", "done"], 1000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 10 }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.35)", "text-halo-width": .6 } });
       state.map.addLayer({ id: "stops", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("marker"), "icon-allow-overlap": true, "icon-anchor": "bottom", "icon-ignore-placement": true, "icon-image": ["get", "pinImage"], "icon-size": STOP_PIN_ICON_SIZE, "symbol-sort-key": ["case", ["get", "active"], 4000, ["get", "selected"], 3000, ["get", "done"], 1000, 2000] } });
       state.map.addLayer({ id: "stop-labels", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("marker"), "symbol-sort-key": ["case", ["get", "active"], 4000, ["get", "selected"], 3000, ["get", "done"], 1000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 11, "text-offset": [0, -1.85] }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.28)", "text-halo-width": .7 } });
-      state.map.addLayer({ id: "vehicles", type: "circle", source: "vehicles", paint: { "circle-radius": 7, "circle-color": "#1d1d1f", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
-      state.map.addLayer({ id: "vehicle-labels", type: "symbol", source: "vehicles", layout: { "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-size": 12, "text-offset": [0, -1.8] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+      state.map.addLayer({ id: "vehicles", type: "symbol", source: "vehicles", layout: { "icon-allow-overlap": true, "icon-anchor": "center", "icon-ignore-placement": true, "icon-image": ["get", "markerImage"], "icon-size": VEHICLE_MARKER_ICON_SIZE, "symbol-sort-key": ["case", ["boolean", ["get", "selected"], false], 5000, 2000] } });
+      state.map.addLayer({ id: "vehicle-labels", type: "symbol", source: "vehicles", layout: { "symbol-sort-key": ["case", ["boolean", ["get", "selected"], false], 5000, 2000], "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-size": 12, "text-offset": [0, -2.55] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
       ["origin", "vehicles", "stops", "stop-points", "dropoffs", "routes", "route-selected", "route-next", "route-done"].forEach((layer) => {
         state.map.on("mouseenter", layer, () => { state.map.getCanvas().style.cursor = "pointer"; });
         state.map.on("mouseleave", layer, () => { state.map.getCanvas().style.cursor = ""; });
