@@ -452,6 +452,47 @@
     .collapse-summary small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 900; }
     .collapse-summary b { justify-self: end; min-height: 26px; display: inline-flex; align-items: center; border-radius: 999px; padding: 0 10px; background: #f5f5f7; color: var(--ink); font-size: 12px; font-weight: 1000; white-space: nowrap; }
 
+    body.customer-delivery-demo .left-tabs,
+    body.customer-delivery-demo .side,
+    body.customer-delivery-demo #pageContent,
+    body.customer-delivery-demo #notificationIsland,
+    body.customer-delivery-demo #floatingDriverCard,
+    body.customer-delivery-demo .destination-mode { display: none !important; }
+    body.customer-delivery-demo .top-cluster { left: 20px; top: 20px; }
+    body.customer-delivery-demo .top { max-width: min(760px, calc(100vw - 40px)); }
+    body.customer-delivery-demo .top-main { flex-wrap: wrap; white-space: normal; }
+    body.customer-delivery-demo .speed-control { grid-template-columns: auto minmax(220px, 1fr) auto auto; }
+    body.customer-delivery-demo .grid { grid-template-columns: 1fr; }
+    .customer-order-card {
+      position: absolute; right: 22px; top: 22px; z-index: 7;
+      width: min(410px, calc(100vw - 44px)); padding: 20px;
+      display: grid; gap: 14px; background: rgba(255,255,255,.92);
+      border: 1px solid rgba(255,255,255,.76); border-radius: 28px;
+      box-shadow: var(--shadow); backdrop-filter: blur(18px);
+    }
+    .customer-order-card[hidden] { display: none !important; }
+    .customer-order-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .customer-order-head strong { display:block; font-size:18px; font-weight:1000; letter-spacing:-.04em; }
+    .customer-order-head small { display:block; margin-top:4px; color:var(--muted); font-size:12px; font-weight:900; }
+    .customer-status-grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+    .customer-status-item { padding:11px 12px; border:1px solid var(--hairline); border-radius:17px; background:#fff; }
+    .customer-status-item span { display:block; color:var(--muted); font-size:11px; font-weight:900; letter-spacing:-.02em; }
+    .customer-status-item b { display:block; margin-top:4px; color:var(--ink); font-size:15px; font-weight:1000; letter-spacing:-.035em; }
+    .customer-destination { padding:13px; border-radius:19px; background:var(--blue-soft); border:1px solid rgba(0,102,204,.12); }
+    .customer-destination strong { display:block; font-size:16px; font-weight:1000; letter-spacing:-.04em; }
+    .customer-destination span { display:block; margin-top:4px; color:var(--muted); font-size:12px; font-weight:850; line-height:1.35; }
+    .customer-vehicle-target {
+      width:100%; min-height:42px; border:1px solid var(--hairline); border-radius:999px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:0 14px; background:#fff; color:var(--ink); cursor:pointer; font-weight:1000;
+    }
+    .customer-vehicle-target span { color:var(--muted); font-size:12px; font-weight:900; }
+    .customer-cargo { display:grid; gap:7px; }
+    .customer-cargo-title { color:var(--muted); font-size:12px; font-weight:1000; letter-spacing:-.02em; }
+    .customer-cargo-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 11px; border:1px solid var(--hairline); border-radius:14px; background:#fff; font-size:13px; font-weight:900; }
+    .customer-cargo-row b { font-size:12px; font-weight:1000; color:var(--ink); white-space:nowrap; }
+    .customer-hint { margin:0; color:var(--muted); font-size:12px; font-weight:850; line-height:1.42; }
+
     @media (max-width: 1500px) and (min-width: 1121px) {
       .page-content.work-page .work-three-grid { grid-template-columns:minmax(260px, .86fr) minmax(390px, 1.14fr); }
       .page-content.work-page .work-column:nth-child(3) { grid-column:1 / -1; }
@@ -494,6 +535,10 @@
       .work-scroll, .work-timeline-list, .work-order-detail { max-height:none; overflow:visible; }
       .row { grid-template-columns: 1fr; }
       .row .chip { justify-self: start; }
+      body.customer-delivery-demo .top-cluster { position: relative; left: auto; right: auto; top: auto; margin: 12px; }
+      body.customer-delivery-demo .top { max-width: none; }
+      body.customer-delivery-demo .map-card { height: 56vh; min-height: 380px; }
+      .customer-order-card { position: relative; right: auto; top: auto; width: auto; margin: 14px 12px 20px; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
@@ -539,6 +584,7 @@
       </div>
     </div>
     <div id="floatingDriverCard" class="floating-driver" aria-label="선택 배송원"></div>
+    <section id="customerOrderCard" class="customer-order-card" aria-label="고객 배송 조회" hidden></section>
 
     <section class="grid" aria-label="배송 관제 데모">
       <article class="card map-card" aria-label="실시간 차량 지도">
@@ -569,11 +615,16 @@
     const VEHICLE_MARKER_SPOTLIGHT = "#DAFD54";
     const DESTINATION_MARKER_BLUE = "#0066cc";
     const DESTINATION_MARKER_GREEN = "#1f8b4c";
+    const DESTINATION_MARKER_MIN_ZOOM = 9.5;
     const DESTINATION_FOCUS_ZOOM = 15.8;
     const VEHICLE_ICON_PATH = "M20 8H17V4H3C1.9 4 1 4.9 1 6V17H3C3 18.66 4.34 20 6 20C7.66 20 9 18.66 9 17H15C15 18.66 16.34 20 18 20C19.66 20 21 18.66 21 17H23V12L20 8ZM19.5 9.5L21.46 12H17V9.5H19.5ZM6 18C5.45 18 5 17.55 5 17C5 16.45 5.45 16 6 16C6.55 16 7 16.45 7 17C7 17.55 6.55 18 6 18ZM8.22 15C7.67 14.39 6.89 14 6 14C5.11 14 4.33 14.39 3.78 15H3V6H15V15H8.22ZM18 18C17.45 18 17 17.55 17 17C17 16.45 17.45 16 18 16C18.55 16 19 16.45 19 17C19 17.55 18.55 18 18 18Z";
     const FIXED_SPEED_KPH = 40;
     const FIXED_SPEED_MPS = FIXED_SPEED_KPH * 1000 / 3600;
-    const DEBUG_LOGS = location.hostname === "localhost" || location.protocol === "file:" || new URLSearchParams(location.search).has("debug");
+    const DEBUG_LOGS = new URLSearchParams(location.search).has("debug");
+    function isCustomerDeliveryDemo() {
+      return new URLSearchParams(location.search).get('demo') === 'delivery-inquiry';
+    }
+    const CUSTOMER_DELIVERY_MODE = isCustomerDeliveryDemo();
 
     const ORIGIN = {
       name: "군포복합물류센터",
@@ -642,6 +693,21 @@
       { id: "proof11", plate: "33사 7311", route: "central", courierId: "c12", temp: 4.9, scenario: "to-stop", targetStopNo: 11, progress: .18, scenarioLabel: "증빙 확인 필요 11번 이동" },
       { id: "complete12", plate: "34자 7412", route: "songpa", courierId: "c13", temp: 4.5, scenario: "completed", scenarioLabel: "배송 완료 운행 종료" },
     ];
+    const CUSTOMER_DELIVERY_DEMO = {
+      orderNo: "DSV-20260707-0042",
+      recipient: "삼성서울병원 약제팀",
+      vehicleId: "to10",
+      vehiclePlate: "23바 6303",
+      stopNo: 12,
+      destinationName: "삼성서울병원",
+      destinationAddress: "서울 강남구 일원로 81",
+      cargo: [
+        { name: "임상시험 검체", qty: "4박스" },
+        { name: "냉장 항생제", qty: "6EA" },
+        { name: "온도기록계 동봉", qty: "1개" },
+        { name: "검체 운송 튜브", qty: "12EA" }
+      ]
+    };
     const vehicles = scenarioDefinitions.map((vehicle) => ({
       ...vehicle,
       title: vehicle.plate,
@@ -661,10 +727,39 @@
       stops: ROUTE_TEMPLATES[vehicle.route].map(([name, coord], i) => ({ no: i + 1, name, coord }))
     }));
 
-    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, lastTrackingAt: 0, lastTrackingSampleAt: 0, programmaticCameraUntil: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, riskDismissedUntil: 0, notifications: [], notificationOpen: false, notificationRingTimer: 0, destinationAnimationTimer: 0, temperatureTimelineUserUntil: 0, pendingTemperatureTimelineSignature: "", speedLevel: 5, dwellMinutes: 5, viewMode: "2d", destinationDisplayMode: "marker", activeTab: "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, driverProfileVisible: false, spotlightVehicleId: "", workAction: "", uploadPreview: false, selectedRecordIndex: 0, selectedCourierId: "c01", trackingVehicleId: "", riskVehicleId: "unload04", map: null, selectedVehicleId: "depart01", selectedStopNo: 1, routes: {}, dropoffs: {}, routeLegs: {} };
+    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, lastTrackingAt: 0, lastTrackingSampleAt: 0, programmaticCameraUntil: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, riskDismissedUntil: 0, notifications: [], notificationOpen: false, notificationRingTimer: 0, destinationAnimationTimer: 0, temperatureTimelineUserUntil: 0, pendingTemperatureTimelineSignature: "", speedLevel: 5, dwellMinutes: 5, viewMode: "2d", destinationDisplayMode: "marker", activeTab: CUSTOMER_DELIVERY_MODE ? "customer" : "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, driverProfileVisible: false, spotlightVehicleId: "", workAction: "", uploadPreview: false, selectedRecordIndex: 0, selectedCourierId: "c01", trackingVehicleId: "", riskVehicleId: "unload04", map: null, selectedVehicleId: CUSTOMER_DELIVERY_MODE ? CUSTOMER_DELIVERY_DEMO.vehicleId : "depart01", selectedStopNo: CUSTOMER_DELIVERY_MODE ? CUSTOMER_DELIVERY_DEMO.stopNo : 1, customerRouteVisible: false, customerRouteRequestedAt: 0, routes: {}, dropoffs: {}, routeLegs: {}, lastMapData: null, lastCustomerMapData: null };
     const demoLogs = [];
     const routeCache = new Map();
     window.demoLogs = demoLogs;
+    window.dsvDemo = {
+      get map() { return state.map; },
+      zoom() { return state.map ? Number(state.map.getZoom().toFixed(2)) : null; },
+      center() { return state.map ? state.map.getCenter().toArray() : null; },
+      selection() {
+        return {
+          selectedVehicleId: state.selectedVehicleId,
+          spotlightVehicleId: state.spotlightVehicleId,
+          trackingVehicleId: state.trackingVehicleId,
+          selectedStopNo: state.selectedStopNo
+        };
+      },
+      customerSnapshot() { return customerSnapshot(); },
+      showCustomerRoute() { return showCustomerRouteToDestination("debug-hook"); },
+      watchZoom() {
+        if (!state.map) return null;
+        const report = () => console.info(`[Clever - DSV Zoom] ${state.map.getZoom().toFixed(2)}`);
+        state.map.off("zoomend", window.dsvDemo._zoomReporter);
+        window.dsvDemo._zoomReporter = report;
+        state.map.on("zoomend", report);
+        report();
+        return "zoomend logging enabled";
+      },
+      unwatchZoom() {
+        if (state.map && window.dsvDemo._zoomReporter) state.map.off("zoomend", window.dsvDemo._zoomReporter);
+        window.dsvDemo._zoomReporter = null;
+        return "zoomend logging disabled";
+      }
+    };
     const tabs = {
       control: ["관제", "지도 기반 실시간 배송 관제", "LIVE"],
       couriers: ["배송원", "배송원별 차량, 배송 특징, 담당 루트를 확인합니다.", "인력"],
@@ -1374,7 +1469,188 @@
       });
     }
 
+
+    function customerVehicle() { return vehicleById(CUSTOMER_DELIVERY_DEMO.vehicleId) || vehicles[0]; }
+    function customerStop(vehicle = customerVehicle()) { return vehicle.stops[CUSTOMER_DELIVERY_DEMO.stopNo - 1] || vehicle.stops.at(-1); }
+    function customerDestinationCoord(vehicle = customerVehicle()) {
+      return dropoffsOf(vehicle)[CUSTOMER_DELIVERY_DEMO.stopNo - 1] || customerStop(vehicle)?.coord;
+    }
+    function customerArrivalEtaMs(vehicle = customerVehicle()) {
+      const targetStopNo = Math.min(Math.max(CUSTOMER_DELIVERY_DEMO.stopNo, 1), vehicle.stops.length);
+      const actual = (vehicle.arrivalEvents || []).find((event) => event.stopNo === targetStopNo);
+      if (vehicle.completed || vehicle.done >= targetStopNo) return actual?.at || vehicle.arrivedAt || simulatedNowMs();
+      const departureLeft = departureRemainingMs(vehicle);
+      if (departureLeft === Infinity || timeScale() <= 0) return null;
+      let seconds = (Math.max(0, departureLeft) + dwellRemainingMs(vehicle)) / 1000;
+      for (let i = Math.max(0, vehicle.done); i < targetStopNo; i += 1) {
+        if (i > vehicle.done) seconds += stopDwellMs() / 1000;
+        seconds += i === vehicle.done ? remainingLegSeconds(vehicle, i) : legDurationSeconds(vehicle, i);
+      }
+      return Math.max(simulatedNowMs() + 1000, simulatedNowMs() + seconds * 1000);
+    }
+    function customerStatusText(vehicle = customerVehicle()) {
+      const targetStopNo = CUSTOMER_DELIVERY_DEMO.stopNo;
+      if (vehicle.completed || vehicle.done >= targetStopNo) return "배송 완료";
+      if (vehicle.done === targetStopNo && dwellRemainingMs(vehicle) > 0) return "상품 하차 중";
+      const etaMs = customerArrivalEtaMs(vehicle);
+      if (etaMs && etaMs - simulatedNowMs() <= 5 * 60 * 1000) return "곧 도착";
+      return "배송중";
+    }
+    function customerEtaText(vehicle = customerVehicle()) {
+      if (vehicle.completed || vehicle.done >= CUSTOMER_DELIVERY_DEMO.stopNo) return "도착 완료";
+      const etaMs = customerArrivalEtaMs(vehicle);
+      return etaMs ? timeLabel(etaMs) : "대기";
+    }
+    function customerDwellWindowText(vehicle = customerVehicle()) {
+      if (vehicle.completed || vehicle.done >= CUSTOMER_DELIVERY_DEMO.stopNo) return "하차 완료";
+      const etaMs = customerArrivalEtaMs(vehicle);
+      if (!etaMs) return "하차 대기";
+      return `${timeLabel(etaMs)}–${timeLabel(etaMs + stopDwellMs())}`;
+    }
+    function customerRouteCoords(vehicle = customerVehicle()) {
+      if (!routeReady(vehicle)) return [];
+      const route = routeOf(vehicle);
+      const target = stopMeters(vehicle)[CUSTOMER_DELIVERY_DEMO.stopNo - 1] || routeStats(route).total;
+      if (target <= (vehicle.meters || 0)) return [];
+      return routeSegment(route, vehicle.meters || 0, target);
+    }
+    function customerMapData() {
+      const vehicle = customerVehicle();
+      const stop = customerStop(vehicle);
+      const destinationCoord = customerDestinationCoord(vehicle) || stop?.coord;
+      const routeCoords = state.customerRouteVisible ? customerRouteCoords(vehicle) : [];
+      return {
+        origin: fc([]),
+        routes: fc([]),
+        routeSelected: routeCoords.length > 1 ? routeFeature(routeCoords, { vehicleId: vehicle.id, customerRoute: true }) : fc([]),
+        routeDone: fc([]),
+        routeNext: fc([]),
+        stops: fc(destinationCoord ? [pointFeature(destinationCoord, {
+          vehicleId: vehicle.id,
+          stopNo: CUSTOMER_DELIVERY_DEMO.stopNo,
+          label: String(CUSTOMER_DELIVERY_DEMO.stopNo),
+          name: CUSTOMER_DELIVERY_DEMO.destinationName,
+          pinImage: "stop-pin-selected",
+          customerVisible: true,
+          selected: true,
+          active: true,
+          nextStop: false,
+          risk: false,
+          mutedDestination: false
+        })] : []),
+        dropoffs: fc([]),
+        vehicles: fc([pointFeature(vehiclePosition(vehicle), {
+          vehicleId: vehicle.id,
+          label: vehicle.plate,
+          selected: true,
+          markerImage: "vehicle-marker-spotlight",
+          customerVisible: true,
+          risk: !!vehicle.risk
+        })])
+      };
+    }
+    function featureCount(data) {
+      if (!data) return 0;
+      if (data.type === "FeatureCollection") return data.features.length;
+      if (data.type === "Feature") return 1;
+      return 0;
+    }
+    function visibleElement(selector) {
+      const el = document.querySelector(selector);
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      return !el.hidden && style.display !== "none" && style.visibility !== "hidden" && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().height > 0;
+    }
+    function customerSnapshot() {
+      const data = state.lastCustomerMapData || customerMapData();
+      const stop = customerStop();
+      const adminChromeVisible = [".left-tabs", ".side", "#pageContent", "#notificationIsland", "#floatingDriverCard"].some(visibleElement);
+      return {
+        mode: CUSTOMER_DELIVERY_MODE ? "delivery-inquiry" : "admin",
+        urlMode: new URLSearchParams(location.search).get("demo") === "delivery-inquiry" ? "demo=delivery-inquiry" : "",
+        orderNo: CUSTOMER_DELIVERY_DEMO.orderNo,
+        vehicleIds: (data.vehicles.features || []).map((feature) => feature.properties.vehicleId),
+        destination: { stopNo: CUSTOMER_DELIVERY_DEMO.stopNo, name: CUSTOMER_DELIVERY_DEMO.destinationName || stop?.name || "" },
+        sourceCounts: {
+          vehicles: featureCount(data.vehicles),
+          destinations: featureCount(data.stops),
+          routes: featureCount(data.routes) + featureCount(data.routeSelected) + featureCount(data.routeDone) + featureCount(data.routeNext),
+          adminStops: (data.stops.features || []).filter((feature) => feature.properties?.customerVisible !== true).length
+        },
+        adminChromeVisible,
+        customerRouteVisible: !!state.customerRouteVisible
+      };
+    }
+    function renderCustomerOrderCard() {
+      const card = $("customerOrderCard");
+      if (!card) return;
+      const vehicle = customerVehicle();
+      const status = customerStatusText(vehicle);
+      const eta = customerEtaText(vehicle);
+      const dwell = customerDwellWindowText(vehicle);
+      card.hidden = false;
+      card.innerHTML = `
+        <div class="customer-order-head">
+          <div><strong>${safeText(CUSTOMER_DELIVERY_DEMO.recipient)}</strong><small>${safeText(CUSTOMER_DELIVERY_DEMO.orderNo)}</small></div>
+          <span class="chip ${status === "배송 완료" ? "green" : status === "곧 도착" ? "amber" : "blue"}">${safeText(status)}</span>
+        </div>
+        <div class="customer-destination"><strong>${safeText(CUSTOMER_DELIVERY_DEMO.destinationName)}</strong><span>${safeText(CUSTOMER_DELIVERY_DEMO.destinationAddress)}</span></div>
+        <div class="customer-status-grid">
+          <div class="customer-status-item"><span>도착 예정</span><b id="customerEtaText">${safeText(eta)}</b></div>
+          <div class="customer-status-item"><span>정차·하차 예상</span><b id="customerDwellText">${safeText(dwell)}</b></div>
+        </div>
+        <button class="customer-vehicle-target" type="button" data-customer-route="true"><strong>${safeText(vehicle.plate)}</strong><span>${state.customerRouteVisible ? "배송 경로 표시 중" : "차량 클릭 시 경로 표시"}</span></button>
+        <div class="customer-cargo"><div class="customer-cargo-title">배송 품목</div>
+          ${CUSTOMER_DELIVERY_DEMO.cargo.map((item) => `<div class="customer-cargo-row"><span>${safeText(item.name)}</span><b>${safeText(item.qty)}</b></div>`).join("")}
+        </div>
+        <p class="customer-hint">현재 차량 위치와 고객 배송지까지의 경로만 표시합니다.</p>`;
+      card.querySelector("[data-customer-route]")?.addEventListener("click", () => showCustomerRouteToDestination("customer-card"));
+    }
+    function renderCustomerMode() {
+      document.body.classList.add("customer-delivery-demo");
+      document.querySelector(".top h1").textContent = "Clever - 배송 조회 Demo";
+      document.querySelector(".map-card").hidden = false;
+      document.querySelector(".side").hidden = true;
+      $("pageContent").hidden = true;
+      $("pageContent").innerHTML = "";
+      $("sideContent").innerHTML = "";
+      $("floatingDriverCard").hidden = true;
+      renderCustomerOrderCard();
+    }
+    function showCustomerRouteToDestination(reason = "vehicle") {
+      if (!CUSTOMER_DELIVERY_MODE) return false;
+      state.customerRouteVisible = true;
+      state.customerRouteRequestedAt = simulatedNowMs();
+      updateMapData();
+      renderCustomerOrderCard();
+      const vehicle = customerVehicle();
+      const coord = vehiclePosition(vehicle);
+      if (coord) easeMap({ center: coord, zoom: 13.9, duration: 520, essential: true });
+      logApi("POST", `${CLEVER_SERVER}/demo/customer-route`, { orderNo: CUSTOMER_DELIVERY_DEMO.orderNo, vehicle: vehicle.id, reason }, "info");
+      return true;
+    }
+    function focusCustomerDestination(reason = "destination") {
+      if (!CUSTOMER_DELIVERY_MODE) return false;
+      const coord = customerDestinationCoord();
+      if (coord) easeMap({ center: coord, zoom: DESTINATION_FOCUS_ZOOM, duration: 520, essential: true });
+      logApi("POST", `${CLEVER_SERVER}/demo/customer-destination-focus`, { orderNo: CUSTOMER_DELIVERY_DEMO.orderNo, reason }, "info");
+      return true;
+    }
+    function prepareCustomerMode() {
+      if (!CUSTOMER_DELIVERY_MODE) return;
+      state.activeTab = "customer";
+      state.selectedVehicleId = CUSTOMER_DELIVERY_DEMO.vehicleId;
+      state.selectedStopNo = CUSTOMER_DELIVERY_DEMO.stopNo;
+      state.selectedCourierId = courierFor(customerVehicle()).id;
+      state.spotlightVehicleId = "";
+      state.trackingVehicleId = "";
+      state.driverProfileVisible = false;
+      document.body.classList.add("customer-delivery-demo");
+      renderCustomerMode();
+    }
+
     function setTab(tab) {
+      if (CUSTOMER_DELIVERY_MODE) return renderCustomerMode();
       state.activeTab = tabs[tab] ? tab : "control";
       document.querySelectorAll(".main-tab").forEach((button) => button.classList.toggle("active", button.dataset.tab === state.activeTab));
       renderSide();
@@ -1852,6 +2128,12 @@
               <tr><th>증빙 누락</th><td><label><input type="checkbox" checked> 기록 페이지에 표시</label></td></tr>
             </tbody></table>
           </section>
+          <section class="page-panel wide">
+            <div class="tab-line"><span>배송 조회 Demo</span><span class="chip mini">고객 화면</span></div>
+            <table class="page-table"><tbody>
+              <tr><th>바로가기</th><td><a class="btn primary" href="index.html?demo=delivery-inquiry">배송조회 Demo로 이동</a></td></tr>
+            </tbody></table>
+          </section>
         </div>`, "", "dynamic-page settings-page");
       $("dwellMinutesInput")?.addEventListener("change", (event) => {
         state.dwellMinutes = Math.max(1, Number(event.target.value) || DEFAULT_DWELL_MINUTES);
@@ -1864,8 +2146,32 @@
       const total = routeStats(routeOf(vehicle)).total || 1;
       return (vehicle.done * 1000000) + Math.min(total, vehicle.meters || 0);
     }
+    function vehicleSortBand(vehicle) {
+      const status = vehicleStatus(vehicle).key;
+      const departureLeft = departureRemainingMs(vehicle);
+      // Fleet ordering rule: route progress remains the primary order for active/completed work.
+      // Loading is still a status rule: scheduled loading vehicles with a concrete departure ETA
+      // sit above indefinite loading holds instead of sinking to the very bottom.
+      if (status === "loading" && Number.isFinite(departureLeft)) return 200;
+      if (status === "loading") return 100;
+      return 300;
+    }
+    function loadingEtaSortValue(vehicle) {
+      const departureLeft = departureRemainingMs(vehicle);
+      if (!Number.isFinite(departureLeft)) return Number.POSITIVE_INFINITY;
+      return Math.max(0, departureLeft);
+    }
     function sortedVehicles() {
-      return [...vehicles].sort((a, b) => vehicleProgressScore(b) - vehicleProgressScore(a) || vehicles.indexOf(a) - vehicles.indexOf(b));
+      return [...vehicles].sort((a, b) => {
+        const bandDelta = vehicleSortBand(b) - vehicleSortBand(a);
+        if (bandDelta) return bandDelta;
+        const status = vehicleStatus(a).key;
+        if (status === "loading") {
+          const etaDelta = loadingEtaSortValue(a) - loadingEtaSortValue(b);
+          if (etaDelta) return etaDelta;
+        }
+        return vehicleProgressScore(b) - vehicleProgressScore(a) || vehicles.indexOf(a) - vehicles.indexOf(b);
+      });
     }
     function alertBadge(vehicle) { return vehicle.unacknowledgedRisk ? `<span class="alert-dot" aria-label="미확인 온도 오류">!</span>` : ""; }
     function renderFleet() {
@@ -1931,6 +2237,7 @@
     }
     function renderSide() {
       state.lastPanelRenderAt = performance.now();
+      if (CUSTOMER_DELIVERY_MODE || state.activeTab === "customer") return renderCustomerMode();
       const temperatureScroll = captureTemperatureTimelineScroll();
       if (state.activeTab === "couriers") return renderCourierPage();
       if (state.activeTab === "work") return renderWorkPage();
@@ -2210,6 +2517,7 @@
     function renderLivePanels() {
       // Telemetry ticks must not rebuild fleet/destination list HTML. Existing rows keep click handlers,
       // while compact detail views and tracking camera are patched live.
+      if (CUSTOMER_DELIVERY_MODE) { renderCustomerOrderCard(); updateMapData(); return; }
       patchLiveControlPanel();
       patchSelectedDriverCard();
       patchLiveTemperaturePanel();
@@ -2255,7 +2563,8 @@
       return result;
     }
     async function hydrateRoutes() {
-      const groups = vehicles.reduce((acc, vehicle) => {
+      const routeVehicles = CUSTOMER_DELIVERY_MODE ? [customerVehicle()] : vehicles;
+      const groups = routeVehicles.reduce((acc, vehicle) => {
         const key = routeWaypoints(vehicle).map((coord) => coord.join(",")).join(";");
         (acc[key] ||= []).push(vehicle);
         return acc;
@@ -2277,6 +2586,7 @@
     }
 
     function mapData() {
+      if (CUSTOMER_DELIVERY_MODE) return customerMapData();
       const selected = spotlightVehicle();
       const selectedMapRoute = selected && routeReady(selected) ? state.routes[selected.id] : null;
       const nextRoute = selected && selectedMapRoute ? currentLegRoute(selected, selectedMapRoute) : [];
@@ -2434,6 +2744,8 @@
     function updateMapData() {
       if (!state.map?.getSource("routes")) return;
       const data = mapData();
+      state.lastMapData = data;
+      if (CUSTOMER_DELIVERY_MODE) state.lastCustomerMapData = data;
       setSource("origin", data.origin); setSource("routes", data.routes); setSource("route-selected", data.routeSelected); setSource("route-done", data.routeDone); setSource("route-next", data.routeNext); setSource("stops", data.stops); setSource("dropoffs", data.dropoffs); setSource("vehicles", data.vehicles);
     }
     function markProgrammaticCamera() {
@@ -2494,12 +2806,18 @@
     }
     function selectDestination(stopNo, vehicleId = state.selectedVehicleId) {
       // Destination clicks are stop/dropoff inspection actions, not vehicle tracking actions.
-      // Stop active tracking first so the camera cannot snap back to the vehicle after zoom-in.
+      // They still spotlight the owning vehicle/route so the selected route is visually clear,
+      // but tracking stays disabled and the camera does not follow future GPS samples.
       clearVehicleTracking("destination-focus");
       const previousVehicleId = state.selectedVehicleId;
       const vehicle = vehicleById(vehicleId) || selectedVehicle();
       state.selectedVehicleId = vehicle.id;
       state.selectedCourierId = vehicle.courierId;
+      state.spotlightVehicleId = vehicle.id;
+      state.driverProfileVisible = true;
+      state.trackingVehicleId = "";
+      state.lastTrackingAt = 0;
+      state.lastTrackingSampleAt = 0;
       state.selectedStopNo = Math.min(Math.max(Number(stopNo) || 1, 1), vehicle.stops.length);
       updateMapData();
       refreshControlSelection(previousVehicleId !== vehicle.id);
@@ -2519,10 +2837,12 @@
     function selectDestinationFeature(feature, event) {
       if (!feature?.properties) return false;
       suppressMapVehicleClick(event);
+      if (CUSTOMER_DELIVERY_MODE) return focusCustomerDestination("map-destination");
       selectDestination(Number(feature.properties.stopNo), feature.properties.vehicleId);
       return true;
     }
     function selectVehicle(id, stopNo = null, enableTracking = true) {
+      if (CUSTOMER_DELIVERY_MODE) return showCustomerRouteToDestination("select-vehicle");
       const previousVehicleId = state.selectedVehicleId;
       state.selectedVehicleId = id;
       const vehicle = selectedVehicle();
@@ -2606,9 +2926,9 @@
       state.map.addLayer({ id: "origin-label", type: "symbol", source: "origin", layout: { "text-field": "상차", "text-font": MAP_TEXT_FONT, "text-size": 12, "text-offset": [0, -1.8] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
       state.map.addLayer({ id: "dropoffs", type: "circle", source: "dropoffs", minzoom: 15.5, paint: { "circle-radius": ["case", ["get", "active"], 5, ["get", "selected"], 4, 2.8], "circle-color": "#f79009", "circle-stroke-color": "#1d1d1f", "circle-stroke-width": 1.5 } });
       state.map.addLayer({ id: "dropoff-labels", type: "symbol", source: "dropoffs", minzoom: 15.5, layout: { "text-field": "정차", "text-font": MAP_TEXT_FONT, "text-size": 9, "text-offset": [0, -1.15] }, paint: { "text-color": "#9a5a00", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
-      state.map.addLayer({ id: "stop-points", type: "circle", source: "stops", layout: { "visibility": destinationLayerVisibility("point") }, paint: { "circle-radius": 7, "circle-color": ["case", ["get", "mutedDestination"], VEHICLE_MARKER_DEFAULT, ["get", "risk"], "#d92d20", ["get", "nextStop"], DESTINATION_MARKER_GREEN, DESTINATION_MARKER_BLUE], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
-      state.map.addLayer({ id: "stop-point-labels", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("point"), "symbol-sort-key": ["case", ["get", "nextStop"], 4000, ["get", "selected"], 3000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 10 }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.35)", "text-halo-width": .6 } });
-      state.map.addLayer({ id: "stops", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("marker"), "icon-allow-overlap": true, "icon-anchor": "bottom", "icon-ignore-placement": true, "icon-image": ["get", "pinImage"], "icon-size": STOP_PIN_ICON_SIZE, "symbol-sort-key": ["case", ["get", "nextStop"], 4000, ["get", "selected"], 3000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 11, "text-offset": [0, -1.85] }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.28)", "text-halo-width": .7 } });
+      state.map.addLayer({ id: "stop-points", type: "circle", source: "stops", minzoom: DESTINATION_MARKER_MIN_ZOOM, layout: { "visibility": destinationLayerVisibility("point") }, paint: { "circle-radius": 7, "circle-color": ["case", ["get", "mutedDestination"], VEHICLE_MARKER_DEFAULT, ["get", "risk"], "#d92d20", ["get", "nextStop"], DESTINATION_MARKER_GREEN, DESTINATION_MARKER_BLUE], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+      state.map.addLayer({ id: "stop-point-labels", type: "symbol", source: "stops", minzoom: DESTINATION_MARKER_MIN_ZOOM, layout: { "visibility": destinationLayerVisibility("point"), "symbol-sort-key": ["case", ["get", "nextStop"], 4000, ["get", "selected"], 3000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 10 }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.35)", "text-halo-width": .6 } });
+      state.map.addLayer({ id: "stops", type: "symbol", source: "stops", minzoom: DESTINATION_MARKER_MIN_ZOOM, layout: { "visibility": destinationLayerVisibility("marker"), "icon-allow-overlap": true, "icon-anchor": "bottom", "icon-ignore-placement": true, "icon-image": ["get", "pinImage"], "icon-size": STOP_PIN_ICON_SIZE, "symbol-sort-key": ["case", ["get", "nextStop"], 4000, ["get", "selected"], 3000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 11, "text-offset": [0, -1.85] }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.28)", "text-halo-width": .7 } });
       state.map.addLayer({ id: "vehicles", type: "symbol", source: "vehicles", layout: { "icon-allow-overlap": true, "icon-anchor": "center", "icon-ignore-placement": true, "icon-image": ["get", "markerImage"], "icon-size": VEHICLE_MARKER_ICON_SIZE, "symbol-sort-key": ["case", ["boolean", ["get", "selected"], false], 5000, 2000] } });
       state.map.addLayer({ id: "vehicle-labels", type: "symbol", source: "vehicles", layout: { "symbol-sort-key": ["case", ["boolean", ["get", "selected"], false], 5000, 2000], "text-allow-overlap": true, "text-anchor": "bottom", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-justify": "center", "text-size": 12, "text-offset": [0, -1.08] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2.2 } });
       ["origin", "vehicles", "stops", "stop-points", "dropoffs", "routes", "route-selected", "route-next", "route-done"].forEach((layer) => {
@@ -2616,6 +2936,7 @@
         state.map.on("mouseleave", layer, () => { state.map.getCanvas().style.cursor = ""; });
       });
       state.map.on("click", "vehicles", (event) => {
+        if (CUSTOMER_DELIVERY_MODE) { showCustomerRouteToDestination("map-vehicle"); return; }
         const destinationFeature = destinationFeatureAtEvent(event);
         if (destinationFeature && selectDestinationFeature(destinationFeature, event)) return;
         selectVehicle(event.features[0].properties.vehicleId, null, true);
@@ -2624,6 +2945,7 @@
       state.map.on("click", "stop-points", (event) => selectDestinationFeature(event.features[0], event));
       state.map.on("click", "dropoffs", (event) => selectDestinationFeature(event.features[0], event));
       ["routes", "route-selected", "route-next", "route-done"].forEach((layer) => state.map.on("click", layer, (event) => {
+        if (CUSTOMER_DELIVERY_MODE) { showCustomerRouteToDestination("map-route"); return; }
         if (performance.now() < (state.destinationClickLockUntil || 0)) return;
         selectVehicle(event.features[0].properties.vehicleId || state.selectedVehicleId, null, true);
       }));
@@ -2667,6 +2989,7 @@
       if (!globalThis.maplibregl) { logApi("GET", OPENFREEMAP_STYLE, { connected: false, reason: "maplibre script unavailable" }, "risk"); return; }
       const style = await loadMapStyle();
       state.map = new maplibregl.Map({ container: "map", style, center: [126.995, 37.43], zoom: 10.35, pitch: 0, bearing: 0, attributionControl: true, fadeDuration: 0 });
+      window.dsvMap = state.map;
       state.map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
       installSpotlightClearHandlers();
       state.map.on("load", () => { hideBusStops(); softenBoulevards(); enhance2dBuildings(); addMapLayers(); renderSide(); hydrateRoutes(); logApi("GET", OPENFREEMAP_STYLE, { connected: true, vehicles: vehicles.length, stops: vehicles.reduce((sum, vehicle) => sum + vehicle.stops.length, 0), hiddenBasePoi: "bus", building2d: true, whiteBoulevards: true }); });
@@ -2744,6 +3067,7 @@
       state.speedLevel = Number($("speedLevel").value);
       $("speedText").textContent = SPEED_WORDS[state.speedLevel] || `${state.speedLevel}단계`;
       restartTimer();
+      if (CUSTOMER_DELIVERY_MODE) renderCustomerOrderCard();
       if (state.activeTab === "control") patchLiveControlPanel();
       if (state.activeTab === "work") patchWorkPageLive();
       if (log) logApi("PATCH", `${CLEVER_SERVER}/demo/simulation/update-level`, { level: state.speedLevel, timeScale: timeScale(), realBatchIntervalMs: batchIntervalMs(), fixedSpeedKph: FIXED_SPEED_KPH });
@@ -2760,7 +3084,16 @@
     function reset() {
       clearInterval(state.timer); state.timer = null; state.running = false; state.forcedRisk = false; state.forcedRiskStartedAt = 0; state.riskDismissedUntil = 0; state.notifications = []; state.notificationOpen = false; state.batchNo = 0; state.lastSampleAt = 0; $("startBtn").classList.add("primary"); $("startBtn").classList.remove("danger"); $("startBtn").textContent = "Start Simulation"; $("startBtn").disabled = false;
       state.destinationCollapsed = false;
+      state.customerRouteVisible = false;
       applyAllScenarios(Date.now(), true);
+      if (CUSTOMER_DELIVERY_MODE) {
+        state.selectedVehicleId = CUSTOMER_DELIVERY_DEMO.vehicleId;
+        state.selectedCourierId = courierFor(customerVehicle()).id;
+        state.selectedStopNo = CUSTOMER_DELIVERY_DEMO.stopNo;
+        state.trackingVehicleId = ""; state.spotlightVehicleId = ""; state.driverProfileVisible = false; state.lastTrackingAt = 0; state.lastTrackingSampleAt = 0;
+        setRisk(false, false); renderCustomerMode(); updateMapData();
+        return;
+      }
       state.selectedVehicleId = "depart01"; state.selectedCourierId = courierFor(selectedVehicle()).id; state.selectedStopNo = 1; state.trackingVehicleId = ""; state.spotlightVehicleId = ""; state.driverProfileVisible = false; state.lastTrackingAt = 0; state.lastTrackingSampleAt = 0;
       setRisk(false, false); renderSide(); updateMapData();
     }
@@ -2777,9 +3110,15 @@
     $("speedLevel").addEventListener("change", () => updateSpeedLevel(true));
     applyAllScenarios(Date.now(), true);
     updateSpeedLevel(false);
-    renderNotificationIsland();
-    applyDestinationDisplayMode();
-    setTab("control"); initMap();
+    if (CUSTOMER_DELIVERY_MODE) {
+      prepareCustomerMode();
+      applyDestinationDisplayMode();
+      initMap();
+    } else {
+      renderNotificationIsland();
+      applyDestinationDisplayMode();
+      setTab("control"); initMap();
+    }
   </script>
 </body>
 </html>
