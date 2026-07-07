@@ -32,14 +32,19 @@
 
     button { font: inherit; }
     .page { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+    .top-cluster {
+      position: absolute; left: 20px; top: 20px; z-index: 9;
+      display: flex; align-items: flex-start; gap: 12px;
+      transition: opacity .18s ease;
+    }
     .top {
-      position: absolute; left: 20px; top: 20px; transform: none; z-index: 5;
+      position: relative; left: auto; top: auto; transform: none; z-index: 5;
       display: grid; grid-template-rows: auto auto; gap: 8px;
       padding: 14px 16px 14px 18px; border-radius: 24px;
       background: rgba(255,255,255,.84); border: 1px solid rgba(255,255,255,.72); box-shadow: var(--shadow); backdrop-filter: blur(18px);
       transition: opacity .18s ease;
     }
-    body.risk-banner-active .top { top: 20px; }
+    body.risk-banner-active .top-cluster { top: 20px; }
     h1 { margin: 0; font-size: clamp(22px, 2.4vw, 34px); line-height: 1.05; letter-spacing: -.045em; white-space: nowrap; }
     .top-main { display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; white-space: nowrap; }
     .title-row { display: flex; align-items: center; gap: 10px; }
@@ -96,7 +101,7 @@
     #map { position: absolute; inset: 0; }
     .maplibregl-control-container { font-family: inherit; }
     .maplibregl-ctrl-attrib { font-size: 11px; }
-    .notification-island { position: absolute; top: 32px; left: min(846px, calc(100vw - 92px)); z-index: 9; pointer-events: none; }
+    .notification-island { position: relative; flex: 0 0 auto; z-index: 9; pointer-events: none; }
     .notification-bell {
       position: relative; width: 58px; height: 58px; border: 1px solid rgba(255,255,255,.78); border-radius: 999px;
       display: grid; place-items: center; background: rgba(255,255,255,.92); color: var(--ink); cursor: pointer; pointer-events: auto;
@@ -132,7 +137,19 @@
     }
     .side .card { box-shadow: none; overflow: visible; min-height: 0; }
     .panel { padding: 16px; min-height: 0; }
-    .panel-view { height: 100%; display: grid; grid-template-rows: minmax(128px, 1.08fr) minmax(128px, .92fr); gap: 14px; min-height: 0; overflow: visible; }
+    @property --destination-row-height {
+      syntax: "<length-percentage>";
+      inherits: false;
+      initial-value: 46%;
+    }
+    .panel-view {
+      --destination-row-height: 46%;
+      height: 100%; display: grid;
+      grid-template-rows: minmax(0, calc(100% - var(--destination-row-height) - 14px)) minmax(0, var(--destination-row-height));
+      gap: 14px; min-height: 0; overflow: visible;
+      transition: --destination-row-height .26s cubic-bezier(.2, .8, .2, 1), grid-template-rows .26s cubic-bezier(.2, .8, .2, 1);
+    }
+    .panel-view.destination-collapsed { --destination-row-height: 98px; }
     .expand-card { position: relative; display: flex; flex-direction: column; min-height: 0; }
     .card-tools { display: inline-flex; align-items: center; gap: 8px; }
     .panel-toggle { min-height: 28px; border: 0; border-radius: 999px; padding: 0 10px; background: #f2f2f7; color: var(--muted); cursor: pointer; font-size: 12px; font-weight: 900; }
@@ -142,8 +159,10 @@
       padding: 16px; border-radius: 24px; background: rgba(255,255,255,.90); border: 1px solid rgba(255,255,255,.76);
       backdrop-filter: blur(18px); overflow: auto; display: none;
     }
-    .left-expansion.temperature-expansion { width: 540px; max-height: min(720px, calc(100vh - 88px)); }
+    .left-expansion.temperature-expansion { width: 540px; height: min(720px, calc(100vh - 88px)); max-height: min(720px, calc(100vh - 88px)); overflow: hidden; }
+    #destinationCard .left-expansion { top: auto; bottom: 0; max-height: min(680px, calc(100vh - 88px)); }
     .expand-card.expanded .left-expansion { display: grid; gap: 12px; }
+    .expand-card.expanded .temperature-expansion { grid-template-rows: auto auto auto auto minmax(0, 1fr); }
     .expansion-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 900; letter-spacing: -.03em; }
     .temp-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
     .temp-kpi { padding: 8px 9px; border: 1px solid var(--hairline); border-radius: 14px; background: #fff; }
@@ -152,10 +171,15 @@
     .temp-kpi.risk b { color: var(--risk); }
     .temp-graph { width: 100%; height: 286px; display: block; border-radius: 20px; background: #fbfbfd; border: 1px solid var(--hairline); }
     .axis-note { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; font-weight: 800; }
+    .event-log-title { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--ink); font-size:12px; font-weight:1000; letter-spacing:-.03em; }
+    .temperature-expansion .event-log { min-height:0; overflow:auto; padding-right:4px; align-content:start; overscroll-behavior:contain; }
     .event-log, .note-list { display: grid; gap: 8px; }
     .log-row, .note-row { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; padding: 7px 8px; border: 1px solid var(--hairline); border-radius: 13px; background: #fff; font-size: 11px; color: var(--muted); }
     .log-row b, .note-row b { display: block; color: var(--ink); font-size: 11px; }
     .log-row i, .note-row i { width: 22px; height: 22px; border-radius: 999px; display: grid; place-items: center; font-style: normal; font-size: 10px; font-weight: 900; background: var(--canvas); color: var(--muted); }
+    .log-row.arrival i { background: var(--blue-soft); color: var(--blue); }
+    .log-row.planned i { background: #f2f2f7; color: #6e6e73; }
+    .log-row.warn i { background: var(--amber-soft); color: #9a5a00; }
     .log-row.risk i { background: var(--risk-soft); color: var(--risk); }
     .log-row.resolved i, .note-row.done i { background: var(--green-soft); color: var(--green); }
     .note-row.warn i { background: var(--amber-soft); color: #9a5a00; }
@@ -246,6 +270,7 @@
     .page-content.work-page .work-three-grid { flex:1 1 auto; min-height:0; height:auto; grid-auto-rows:minmax(0, 1fr); transition:grid-template-columns .24s ease, gap .24s ease; }
     .work-column { min-height:0; overflow:hidden; display:grid; grid-template-rows:auto minmax(0,1fr); gap:12px; border:1px solid var(--hairline); border-radius:24px; background:#fff; padding:14px; transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
     .page-content.work-page .work-column:hover { transform:translateY(-1px); border-color:rgba(0,0,0,.12); }
+    .page-content.work-page .work-column { gap:6px; }
     .work-column.split { grid-template-rows:auto minmax(0,1fr); }
     .work-column > .tab-line:first-child, .work-block-title, .work-area-card summary {
       margin:0; padding:10px 12px; border-radius:17px; background:linear-gradient(180deg,#f7f8fa 0%,#eef0f4 100%); border:1px solid rgba(229,229,234,.86);
@@ -316,12 +341,13 @@
     .row-title { font-weight: 800; letter-spacing: -.02em; }
     .row-meta { color: var(--muted); font-size: 11px; margin-top: 0; }
     .floating-driver { position: absolute; left: 112px; top: 152px; z-index: 5; width: min(390px, calc(100vw - 540px)); pointer-events: none; }
-    .driver-card { position: relative; pointer-events: auto; margin-top: 0; padding: 14px 44px 14px 14px; display: grid; grid-template-columns: 58px 1fr; gap: 12px; align-items: start; border: 1px solid rgba(255,255,255,.72); border-radius: 22px; background: rgba(255,255,255,.90); backdrop-filter: blur(18px); }
-    .driver-close { position: absolute; right: 12px; top: 12px; width: 28px; height: 28px; border: 0; border-radius: 999px; background: #000; color: #fff; cursor: pointer; font-size: 18px; font-weight: 1000; line-height: 1; }
+    .driver-card { position: relative; pointer-events: auto; margin-top: 0; padding: 14px; display: grid; grid-template-columns: 58px 1fr; gap: 12px; align-items: start; border: 1px solid rgba(255,255,255,.72); border-radius: 22px; background: rgba(255,255,255,.90); backdrop-filter: blur(18px); }
+    .driver-close { position: absolute; right: 14px; top: 12px; width: 28px; height: 28px; border: 0; border-radius: 999px; background: #000; color: #fff; cursor: pointer; font-size: 18px; font-weight: 1000; line-height: 1; }
     .driver-close:focus-visible { outline: 3px solid rgba(0,0,0,.18); outline-offset: 2px; }
     .driver-avatar { width: 58px; height: 58px; border-radius: 20px; display: grid; place-items: center; background: linear-gradient(145deg, #f2f2f7, #ffffff); color: #6e6e73; font-size: 34px; border: 1px solid #ececf1; }
-    .driver-profile { min-width: 0; padding-right: 2px; }
-    .driver-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 15px; font-weight: 1000; letter-spacing: -.04em; }
+    .driver-profile { min-width: 0; padding-right: 38px; }
+    .driver-name { display: flex; align-items: baseline; justify-content: flex-start; gap: 6px; min-width: 0; font-size: 15px; font-weight: 1000; letter-spacing: -.04em; }
+    .driver-name > span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
     .driver-name small { color: var(--muted); font-size: 11px; font-weight: 900; white-space: nowrap; }
     .driver-facts { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; color: var(--muted); font-size: 11px; font-weight: 900; }
     .driver-facts span { min-height: 23px; display: inline-flex; align-items: center; border-radius: 999px; padding: 0 8px; background: #f5f5f7; }
@@ -357,6 +383,48 @@
     .assigned-list { display:grid; gap:8px; margin-top:14px; }
     .assigned-row { border:1px solid var(--hairline); border-radius:16px; padding:10px; display:grid; grid-template-columns:1fr auto; gap:8px; background:#fff; cursor:pointer; }
     .assigned-row.active { background:var(--blue-soft); border-color:rgba(0,102,204,.24); }
+    .page-content.records-page .page-panel > .tab-line:first-child,
+    .page-content.settings-page .page-panel > .tab-line:first-child {
+      margin: 0 0 6px; min-height: 40px; padding: 8px 10px; border-radius: 16px;
+    }
+    .page-content.records-page .record-scroll,
+    .page-content.records-page .page-panel > .timeline {
+      margin-top: 2px;
+    }
+    .courier-detail-panel { gap: 0; padding: 16px; }
+    .courier-detail-panel .work-section,
+    .courier-detail-panel .work-section:first-child {
+      border-top: 0; padding-top: 0;
+    }
+    .courier-detail-panel .work-section + .work-section { margin-top: 28px; }
+    .page-panel.courier-detail-panel > .tab-line:first-child,
+    .page-panel.courier-detail-panel > .work-section > .tab-line:first-child {
+      margin: 0 0 4px; min-height: 40px; padding: 8px 10px; border-radius: 16px;
+    }
+    .courier-detail-head.compact { grid-template-columns: 52px minmax(0, 1fr); gap: 12px; align-items: center; padding: 2px 6px 0; }
+    .courier-detail-head.compact .driver-avatar { width: 52px; height: 52px; border-radius: 18px; font-size: 30px; }
+    .courier-person-line { display:flex; align-items:baseline; justify-content:space-between; gap:10px; min-width:0; }
+    .courier-person-line strong { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:var(--ink); font-size:18px; font-weight:1000; letter-spacing:-.04em; }
+    .courier-person-line small { color:var(--muted); font-size:12px; font-weight:900; white-space:nowrap; }
+    .courier-detail-panel .tab-copy { margin: 5px 0 0; }
+    .courier-detail-panel .trait-list { margin: 8px 6px 22px; }
+    .courier-detail-panel .trait-list span { padding: 6px 8px; font-size: 11px; }
+    .courier-vehicle-list { display:grid; gap:7px; margin-top:2px; margin-bottom:0; }
+    .courier-vehicle-row {
+      min-height: 48px; border:1px solid var(--hairline); border-radius:16px; padding:8px 10px;
+      display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:8px; align-items:center; background:#fff; cursor:pointer; text-align:left;
+    }
+    .courier-vehicle-row.active { background:var(--blue-soft); border-color:rgba(0,102,204,.28); box-shadow:0 0 0 1px rgba(0,102,204,.08) inset; }
+    .courier-vehicle-row strong { display:block; color:var(--ink); font-size:13px; font-weight:1000; letter-spacing:-.03em; }
+    .courier-vehicle-row small { display:block; margin-top:2px; color:var(--muted); font-size:11px; font-weight:800; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .courier-history-scroll { flex:1 1 auto; min-height:0; overflow:auto; margin-top:2px; border:1px solid var(--hairline); border-radius:18px; background:#fff; overscroll-behavior:contain; }
+    .courier-history-table { margin-top:0; font-size:12px; }
+    .courier-history-table th { background:#f7f8fa; color:#5f6368; font-size:11px; font-weight:1000; }
+    .courier-history-table td { padding:10px 8px; color:var(--muted); font-size:12px; font-weight:850; }
+    .courier-history-table td:nth-child(2) { color:var(--ink); font-weight:1000; }
+    .courier-history-table tbody tr:nth-child(odd) { background:#fff; }
+    .courier-history-table tbody tr:nth-child(even) { background:#f7f8fa; }
+    .courier-history-table .chip { min-height: 22px; padding: 0 8px; font-size: 11px; }
 
 
     .timeline { display:grid; gap: 10px; margin-top: 14px; }
@@ -369,9 +437,20 @@
     .t[data-stop] { cursor: pointer; padding: 4px 6px; border-radius: 12px; }
     .t[data-stop].active { background: var(--blue-soft); color: var(--ink); font-weight: 800; }
     .collapse-btn { justify-self: end; margin-top: 12px; border: 0; background: transparent; color: var(--muted); font-weight: 900; cursor: pointer; }
-    .collapsed .stops { display: none; }
-    .collapsed .collapse-summary { display: block; }
-    .collapse-summary { display: none; margin-top: 12px; color: var(--muted); font-size: 13px; }
+    #destinationCard { transition: padding .26s cubic-bezier(.2, .8, .2, 1); }
+    #destinationCard.is-animating, #destinationCard.collapsed { overflow: hidden; }
+    #destinationCard .tab-line { flex: 0 0 auto; max-height: 42px; overflow: hidden; transition: opacity .18s ease, transform .22s ease, max-height .22s ease, margin .22s ease; }
+    #destinationCard .stops { max-height: 720px; transition: opacity .18s ease, transform .22s ease, max-height .24s ease, margin .22s ease; }
+    #destinationCard.collapsed { min-height: 0; padding: 12px; }
+    #destinationCard.collapsed .tab-line { max-height: 0; margin: 0; opacity: 0; transform: translateY(-6px); pointer-events: none; }
+    #destinationCard.collapsed .stops { flex: 0 0 0; min-height: 0; max-height: 0; margin-top: 0; padding-right: 0; opacity: 0; transform: translateY(-6px); pointer-events: none; overflow: hidden; }
+    #destinationCard.collapsed .left-expansion { display: none; }
+    #destinationCard.collapsed .collapse-btn { margin-top: 0; justify-self: stretch; min-height: 30px; border-radius: 999px; background: #f2f2f7; color: var(--ink); font-size: 12px; }
+    #destinationCard.collapsed .collapse-summary { display: grid; }
+    .collapse-summary { display: none; margin: 0 0 8px; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; }
+    .collapse-summary strong { display: block; color: var(--ink); font-size: 14px; font-weight: 1000; letter-spacing: -.03em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .collapse-summary small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 900; }
+    .collapse-summary b { justify-self: end; min-height: 26px; display: inline-flex; align-items: center; border-radius: 999px; padding: 0 10px; background: #f5f5f7; color: var(--ink); font-size: 12px; font-weight: 1000; white-space: nowrap; }
 
     @media (max-width: 1500px) and (min-width: 1121px) {
       .page-content.work-page .work-three-grid { grid-template-columns:minmax(260px, .86fr) minmax(390px, 1.14fr); }
@@ -393,12 +472,13 @@
       body { overflow: auto; }
       .page { height: auto; min-height: 100vh; overflow: visible; }
       .left-tabs { left: 12px; right: 12px; top: 12px; bottom: auto; transform: none; width: auto; grid-auto-flow: column; grid-auto-columns: 70px; overflow-x: auto; }
-      .top { position: fixed; left: 12px; right: 12px; top: 74px; transform: none; flex-wrap: wrap; }
+      .top-cluster { position: fixed; left: 12px; right: 12px; top: 74px; transform: none; }
+      .top { width: 100%; }
       .map-card { position: relative; height: 62vh; min-height: 460px; }
       .notification-island { position: fixed; left: auto; right: 14px; top: 84px; }
       .notification-stack { right: 0; width: min(330px, calc(100vw - 28px)); max-height: 360px; }
       body.risk-banner-active .left-tabs { top: 66px; }
-      body.risk-banner-active .top { top: 128px; }
+      body.risk-banner-active .top-cluster { top: 128px; }
       .floating-driver { left: 12px; right: 12px; top: 204px; width: auto; }
       body.risk-banner-active .floating-driver { top: 258px; }
       .side { position: relative; inset: auto; width: auto; height: auto; min-height: 0; margin: 14px 12px 20px; overflow: visible; }
@@ -429,34 +509,36 @@
       <button class="main-tab" type="button" data-tab="issue">기록</button>
       <button class="main-tab" type="button" data-tab="settings">설정</button>
     </nav>
-    <header class="top">
-      <div class="top-main">
-        <h1>Clever - DSV Demo</h1>
-        <div class="segmented destination-mode" aria-label="배송지 표기 방식">
-          <button id="destinationPointBtn" type="button">포인트</button>
-          <button id="destinationMarkerBtn" type="button" class="active">마커</button>
-        </div>
-        <div class="controls" aria-label="데모 컨트롤">
-          <div class="segmented" aria-label="지도 보기 방식">
-            <button id="view2dBtn" type="button" class="active">2D</button>
-            <button id="view3dBtn" type="button">3D</button>
+    <div class="top-cluster">
+      <header class="top">
+        <div class="top-main">
+          <h1>Clever - DSV Demo</h1>
+          <div class="segmented destination-mode" aria-label="배송지 표기 방식">
+            <button id="destinationPointBtn" type="button">포인트</button>
+            <button id="destinationMarkerBtn" type="button" class="active">마커</button>
           </div>
-          <button id="startBtn" class="btn primary">Start Simulation</button>
-          <button id="resetBtn" class="btn">Reset</button>
+          <div class="controls" aria-label="데모 컨트롤">
+            <div class="segmented" aria-label="지도 보기 방식">
+              <button id="view2dBtn" type="button" class="active">2D</button>
+              <button id="view3dBtn" type="button">3D</button>
+            </div>
+            <button id="startBtn" class="btn primary">Start Simulation</button>
+            <button id="resetBtn" class="btn">Reset</button>
+          </div>
         </div>
+        <label class="speed-control" aria-label="업데이트 레벨">
+          <span>0</span><input id="speedLevel" type="range" min="0" max="10" step="1" value="5"><span>최고속도</span><b id="speedText">표준</b>
+        </label>
+      </header>
+      <div id="notificationIsland" class="notification-island" aria-label="알림 센터">
+        <button id="notificationBell" class="notification-bell" type="button" aria-label="알림 열기" aria-expanded="false">
+          <span class="bell-icon" aria-hidden="true">🔔</span>
+          <span id="notificationCount" class="notification-count" hidden>0</span>
+        </button>
+        <div id="notificationStack" class="notification-stack" hidden></div>
       </div>
-      <label class="speed-control" aria-label="업데이트 레벨">
-        <span>0</span><input id="speedLevel" type="range" min="0" max="10" step="1" value="5"><span>최고속도</span><b id="speedText">표준</b>
-      </label>
-    </header>
-    <div id="floatingDriverCard" class="floating-driver" aria-label="선택 배송원"></div>
-    <div id="notificationIsland" class="notification-island" aria-label="알림 센터">
-      <button id="notificationBell" class="notification-bell" type="button" aria-label="알림 열기" aria-expanded="false">
-        <span class="bell-icon" aria-hidden="true">🔔</span>
-        <span id="notificationCount" class="notification-count" hidden>0</span>
-      </button>
-      <div id="notificationStack" class="notification-stack" hidden></div>
     </div>
+    <div id="floatingDriverCard" class="floating-driver" aria-label="선택 배송원"></div>
 
     <section class="grid" aria-label="배송 관제 데모">
       <article class="card map-card" aria-label="실시간 차량 지도">
@@ -482,9 +564,12 @@
     const STOP_PIN_PIXEL_RATIO = 2;
     const STOP_PIN_ICON_SIZE = 0.62;
     const VEHICLE_MARKER_PIXEL_RATIO = 2;
-    const VEHICLE_MARKER_ICON_SIZE = 0.68;
+    const VEHICLE_MARKER_ICON_SIZE = 0.75;
     const VEHICLE_MARKER_DEFAULT = "#C3C6BF";
     const VEHICLE_MARKER_SPOTLIGHT = "#DAFD54";
+    const DESTINATION_MARKER_BLUE = "#0066cc";
+    const DESTINATION_MARKER_GREEN = "#1f8b4c";
+    const DESTINATION_FOCUS_ZOOM = 15.8;
     const VEHICLE_ICON_PATH = "M20 8H17V4H3C1.9 4 1 4.9 1 6V17H3C3 18.66 4.34 20 6 20C7.66 20 9 18.66 9 17H15C15 18.66 16.34 20 18 20C19.66 20 21 18.66 21 17H23V12L20 8ZM19.5 9.5L21.46 12H17V9.5H19.5ZM6 18C5.45 18 5 17.55 5 17C5 16.45 5.45 16 6 16C6.55 16 7 16.45 7 17C7 17.55 6.55 18 6 18ZM8.22 15C7.67 14.39 6.89 14 6 14C5.11 14 4.33 14.39 3.78 15H3V6H15V15H8.22ZM18 18C17.45 18 17 17.55 17 17C17 16.45 17.45 16 18 16C18.55 16 19 16.45 19 17C19 17.55 18.55 18 18 18Z";
     const FIXED_SPEED_KPH = 40;
     const FIXED_SPEED_MPS = FIXED_SPEED_KPH * 1000 / 3600;
@@ -576,7 +661,7 @@
       stops: ROUTE_TEMPLATES[vehicle.route].map(([name, coord], i) => ({ no: i + 1, name, coord }))
     }));
 
-    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, lastTrackingAt: 0, lastTrackingSampleAt: 0, programmaticCameraUntil: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, riskDismissedUntil: 0, notifications: [], notificationOpen: false, notificationRingTimer: 0, speedLevel: 5, dwellMinutes: 5, viewMode: "2d", destinationDisplayMode: "marker", activeTab: "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, driverProfileVisible: false, spotlightVehicleId: "", workAction: "", uploadPreview: false, selectedRecordIndex: 0, selectedCourierId: "c01", trackingVehicleId: "", riskVehicleId: "unload04", map: null, selectedVehicleId: "depart01", selectedStopNo: 1, routes: {}, dropoffs: {}, routeLegs: {} };
+    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, lastTrackingAt: 0, lastTrackingSampleAt: 0, programmaticCameraUntil: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, riskDismissedUntil: 0, notifications: [], notificationOpen: false, notificationRingTimer: 0, destinationAnimationTimer: 0, temperatureTimelineUserUntil: 0, pendingTemperatureTimelineSignature: "", speedLevel: 5, dwellMinutes: 5, viewMode: "2d", destinationDisplayMode: "marker", activeTab: "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, driverProfileVisible: false, spotlightVehicleId: "", workAction: "", uploadPreview: false, selectedRecordIndex: 0, selectedCourierId: "c01", trackingVehicleId: "", riskVehicleId: "unload04", map: null, selectedVehicleId: "depart01", selectedStopNo: 1, routes: {}, dropoffs: {}, routeLegs: {} };
     const demoLogs = [];
     const routeCache = new Map();
     window.demoLogs = demoLogs;
@@ -594,6 +679,8 @@
     const TEMP_RISK_DURATION_MS = 3 * 60 * 1000;
     const TEMP_GRAPH_WINDOW_MS = 60 * 60 * 1000;
     const TEMP_GRAPH_STEP_MS = 30 * 1000;
+    const TEMP_GRAPH_FUTURE_MS = 10 * 60 * 1000;
+    const TEMP_TIMELINE_FUTURE_MS = 30 * 60 * 1000;
     const STOP_TEMP_RISE_MS = 90 * 1000;
     const STOP_TEMP_FALL_MS = 90 * 1000;
     const TIME_SCALES = [0, .2, .4, .6, .8, 1, 4, 8, 12, 16, 20];
@@ -607,8 +694,9 @@
       demoLogs.unshift(entry); demoLogs.length = Math.min(demoLogs.length, 160);
       if (DEBUG_LOGS) console.debug(`[Clever - DSV Demo] ${entry.method} ${entry.url} ${JSON.stringify(entry.payload)}`);
     }
-    function selectedVehicle() { return vehicles.find((vehicle) => vehicle.id === state.selectedVehicleId) || vehicles[0]; }
-    function spotlightVehicle() { return vehicles.find((vehicle) => vehicle.id === state.spotlightVehicleId); }
+    function vehicleById(id) { return vehicles.find((vehicle) => vehicle.id === id); }
+    function selectedVehicle() { return vehicleById(state.selectedVehicleId) || vehicles[0]; }
+    function spotlightVehicle() { return vehicleById(state.spotlightVehicleId); }
     function trackedVehicle() { return vehicles.find((vehicle) => vehicle.id === state.trackingVehicleId); }
     function courierFor(vehicle = selectedVehicle()) { return couriers.find((courier) => courier.id === vehicle?.courierId) || couriers[0]; }
     function selectedCourier() { return couriers.find((courier) => courier.id === state.selectedCourierId) || courierFor(selectedVehicle()); }
@@ -691,6 +779,10 @@
           </table>
         </div>
       </div>`;
+    }
+    function nextStopNo(vehicle) {
+      if (!vehicle || vehicle.completed) return 0;
+      return Math.min(Math.max((vehicle.done || 0) + 1, 1), vehicle.stops.length);
     }
     function riskStopNo(vehicle) {
       if (!vehicle.risk) return 0;
@@ -785,6 +877,41 @@
       return uniqueArrivalEvents([...inferred, ...actual]).filter((event) => event.at <= nowMs && event.at >= nowMs - TEMP_GRAPH_WINDOW_MS - stopDwellMs());
     }
     function arrivalEventsFor(vehicle, nowMs = simulatedNowMs()) { return inferredArrivalEvents(vehicle, nowMs); }
+    function projectedArrivalEvents(vehicle, nowMs = simulatedNowMs(), futureHorizonMs = TEMP_GRAPH_FUTURE_MS) {
+      // ETA 기반 정차 블럭: 실제 도착 신호가 오기 전에도 다음 하차 구간을 미리 예약한다.
+      // 그래프/타임라인은 이 예약 시간을 기준으로 블럭을 먼저 그려두고, 실제 도착 신호가
+      // 들어오면 recordArrivalEvent()의 실측 시간으로 자연스럽게 치환된다.
+      if (!vehicle || vehicle.completed || futureHorizonMs <= 0 || timeScale() <= 0) return [];
+      const departureLeft = departureRemainingMs(vehicle);
+      if (departureLeft === Infinity) return [];
+      const startIndex = Math.min(Math.max(vehicle.done || 0, 0), vehicle.stops.length);
+      if (startIndex >= vehicle.stops.length) return [];
+      let seconds = Math.max(0, departureLeft) / 1000 + dwellRemainingMs(vehicle) / 1000;
+      const projected = [];
+      for (let i = startIndex; i < vehicle.stops.length; i += 1) {
+        seconds += i === startIndex
+          ? remainingLegSeconds(vehicle, i)
+          : stopDwellMs() / 1000 + legDurationSeconds(vehicle, i);
+        const at = nowMs + seconds * 1000;
+        if (at > nowMs + futureHorizonMs) break;
+        projected.push({
+          at,
+          stopNo: i + 1,
+          stopName: vehicle.stops[i]?.name || `배송지 ${i + 1}`,
+          synthetic: true,
+          projected: true
+        });
+      }
+      return projected;
+    }
+    function scheduledArrivalEvents(vehicle, nowMs = simulatedNowMs(), futureHorizonMs = TEMP_GRAPH_FUTURE_MS) {
+      const startMs = nowMs - TEMP_GRAPH_WINDOW_MS - stopDwellMs();
+      const endMs = nowMs + Math.max(0, futureHorizonMs);
+      return uniqueArrivalEvents([
+        ...arrivalEventsFor(vehicle, nowMs),
+        ...projectedArrivalEvents(vehicle, nowMs, futureHorizonMs)
+      ]).filter((event) => event.at >= startMs && event.at <= endMs);
+    }
     function tempSeed(vehicle) {
       return Array.from(vehicle.id).reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
     }
@@ -870,47 +997,75 @@
         return { minute: (at - startMs) / 60000, at, temp: Number(generated.temp.toFixed(1)), risk: !!generated.risk, phase: generated.phase };
       });
     }
+    function temperatureGraphTimeline(vehicle, events, nowMs, startOffsetMin, endOffsetMin) {
+      const startMs = nowMs + startOffsetMin * 60000;
+      const sampleByBucket = new Map();
+      (vehicle.tempSamples || []).forEach((sample) => {
+        const bucket = Math.floor(sample.at / TEMP_GRAPH_STEP_MS) * TEMP_GRAPH_STEP_MS;
+        if (sample.at >= startMs && sample.at <= nowMs) sampleByBucket.set(bucket, sample);
+      });
+      const steps = Math.round((endOffsetMin - startOffsetMin) * 60000 / TEMP_GRAPH_STEP_MS);
+      return Array.from({ length: steps + 1 }, (_, index) => {
+        const offset = startOffsetMin + index * TEMP_GRAPH_STEP_MS / 60000;
+        const at = nowMs + offset * 60000;
+        const bucket = Math.floor(at / TEMP_GRAPH_STEP_MS) * TEMP_GRAPH_STEP_MS;
+        const actual = at <= nowMs ? sampleByBucket.get(bucket) : null;
+        const generated = actual || normalTemperatureSample(vehicle, at, events);
+        return { minute: offset, at, temp: Number(generated.temp.toFixed(1)), risk: !!generated.risk, phase: generated.phase };
+      });
+    }
     function temperatureGraph(vehicle) {
-      const width = 500, height = 272, left = 48, right = 18, top = 34, bottom = 54;
+      const width = 500, height = 306, left = 58, right = 22, top = 30, bottom = 78;
       const graphW = width - left - right, graphH = height - top - bottom;
-      const nowMs = simulatedNowMs(), startMs = nowMs - TEMP_GRAPH_WINDOW_MS, minTemp = 2, maxTemp = 11.5;
+      const nowMs = simulatedNowMs(), startOffset = -50, endOffset = 10, minTemp = 2, maxTemp = 11.5;
       const y = (temp) => top + (maxTemp - temp) / (maxTemp - minTemp) * graphH;
-      const x = (minute) => left + minute / 60 * graphW;
-      const points = tempTimeline(vehicle);
+      const x = (minute) => left + (minute - startOffset) / (endOffset - startOffset) * graphW;
+      const events = scheduledArrivalEvents(vehicle, nowMs, Math.max(0, endOffset) * 60000);
+      const sampleEvents = events.filter((event) => event.at <= nowMs);
+      const points = temperatureGraphTimeline(vehicle, sampleEvents, nowMs, startOffset, 0);
       const path = points.map((point, i) => `${i ? "L" : "M"}${x(point.minute).toFixed(1)} ${y(point.temp).toFixed(1)}`).join(" ");
-      const xTicks = Array.from({ length: 7 }, (_, i) => i * 10);
+      const xTicks = [-50, -40, -30, -20, -10, 0, 10];
       const yTicks = [2, 4, 6, 8, 10];
-      const stopBlocks = arrivalEventsFor(vehicle, nowMs).filter((event) => event.at + stopDwellMs() >= startMs && event.at <= nowMs).map((event) => {
-        const blockStart = Math.max(0, (event.at - startMs) / 60000);
-        const blockEnd = Math.min(60, (event.at + stopDwellMs() - startMs) / 60000);
+      const graphStartMs = nowMs + startOffset * 60000;
+      const graphEndMs = nowMs + endOffset * 60000;
+      const stopBlocks = events.filter((event) => event.at + stopDwellMs() >= graphStartMs && event.at <= graphEndMs).map((event) => {
+        const blockStart = Math.max(startOffset, (event.at - nowMs) / 60000);
+        const blockEnd = Math.min(endOffset, (event.at + stopDwellMs() - nowMs) / 60000);
         const blockWidth = Math.max(1.5, x(blockEnd) - x(blockStart));
-        return `<rect x="${x(blockStart).toFixed(1)}" y="${top}" width="${blockWidth.toFixed(1)}" height="${graphH}" rx="5" fill="#fff4df" stroke="#f79009" stroke-opacity=".28"/>`;
+        const isFuture = event.at > nowMs;
+        const isActive = event.at <= nowMs && event.at + stopDwellMs() >= nowMs;
+        const opacity = isActive ? ".72" : isFuture ? ".34" : ".54";
+        return `<rect x="${x(blockStart).toFixed(1)}" y="${top + 1}" width="${blockWidth.toFixed(1)}" height="${graphH - 2}" fill="#fff4df" opacity="${opacity}"/><line x1="${x(blockStart).toFixed(1)}" y1="${top + 5}" x2="${x(blockStart).toFixed(1)}" y2="${top + graphH - 5}" stroke="#f79009" stroke-width="1.2" stroke-dasharray="3 4" opacity="${isFuture ? ".34" : ".45"}"/>`;
       }).join("");
       const riskPoints = points.filter((point) => point.risk || point.temp >= 8);
-      const latest = points.at(-1) || { temp: vehicle.temp || vehicle.baseTemp || 0, minute: 60 };
+      const latest = points.find((point) => Math.abs(point.minute) < .001) || points.find((point) => point.minute > 0) || { temp: vehicle.temp || vehicle.baseTemp || 0, minute: 0 };
       const riskBandTop = top, riskBandBottom = y(8);
       return `<svg class="temp-graph" viewBox="0 0 ${width} ${height}" role="img" aria-label="최근 1시간 온도 분석 그래프">
         <defs>
           <linearGradient id="tempLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3a3a3c"/><stop offset="1" stop-color="#111111"/></linearGradient>
           <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity=".12"/></filter>
+          <clipPath id="tempPlotClip"><rect x="${left}" y="${top}" width="${graphW}" height="${graphH}" rx="12"/></clipPath>
         </defs>
         <rect x="0" y="0" width="${width}" height="${height}" rx="20" fill="#fbfbfd"/>
         <rect x="${left}" y="${top}" width="${graphW}" height="${graphH}" rx="12" fill="#ffffff" stroke="#e5e5ea"/>
-        <rect x="${left}" y="${riskBandTop}" width="${graphW}" height="${Math.max(0, riskBandBottom - riskBandTop).toFixed(1)}" rx="12" fill="#fff0ed" opacity=".72"/>
-        ${stopBlocks}
+        <g clip-path="url(#tempPlotClip)">
+          <rect x="${left}" y="${riskBandTop}" width="${graphW}" height="${Math.max(0, riskBandBottom - riskBandTop).toFixed(1)}" fill="#fff0ed" opacity=".72"/>
+          ${stopBlocks}
+        </g>
         ${yTicks.map((tick) => `<line x1="${left}" y1="${y(tick).toFixed(1)}" x2="${width - right}" y2="${y(tick).toFixed(1)}" stroke="${tick === 8 ? "#d92d20" : "#ececf1"}" stroke-width="${tick === 8 ? 1.4 : 1}" stroke-dasharray="${tick === 8 ? "5 4" : ""}"/><text x="${left - 8}" y="${(y(tick) + 3).toFixed(1)}" text-anchor="end" fill="${tick === 8 ? "#d92d20" : "#6e6e73"}" font-size="10" font-weight="900">${tick}°</text>`).join("")}
-        ${xTicks.map((tick) => `<line x1="${x(tick).toFixed(1)}" y1="${top}" x2="${x(tick).toFixed(1)}" y2="${top + graphH}" stroke="#f0f0f4"/><text x="${x(tick).toFixed(1)}" y="${height - 18}" text-anchor="middle" fill="#6e6e73" font-size="10" font-weight="800">${tick === 60 ? "현재" : `-${60 - tick}`}</text>`).join("")}
+        ${xTicks.map((tick) => `<line x1="${x(tick).toFixed(1)}" y1="${top}" x2="${x(tick).toFixed(1)}" y2="${top + graphH}" stroke="${tick === 0 ? "#d0d0d7" : "#f0f0f4"}" stroke-width="${tick === 0 ? 1.3 : 1}"/><text x="${x(tick).toFixed(1)}" y="${top + graphH + 16}" text-anchor="middle" fill="${tick === 0 ? "#1d1d1f" : "#6e6e73"}" font-size="10" font-weight="900">${tick === 0 ? "현재" : tick > 0 ? `+${tick}` : tick}</text>`).join("")}
+        <line x1="${left}" y1="${top + graphH}" x2="${width - right}" y2="${top + graphH}" stroke="#d8d8de" stroke-width="1.2"/>
         <path d="${path}" fill="none" stroke="url(#tempLine)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" filter="url(#softGlow)"/>
         ${points.filter((_, i) => i % 2 === 0).map((point) => `<circle cx="${x(point.minute).toFixed(1)}" cy="${y(point.temp).toFixed(1)}" r="1.25" fill="#1d1d1f" opacity=".72"/>`).join("")}
         ${riskPoints.map((point) => `<circle cx="${x(point.minute).toFixed(1)}" cy="${y(point.temp).toFixed(1)}" r="3" fill="#d92d20" stroke="#fff" stroke-width="1.3"/>`).join("")}
         <circle cx="${x(latest.minute).toFixed(1)}" cy="${y(latest.temp).toFixed(1)}" r="4" fill="#0066cc" stroke="#fff" stroke-width="1.5"/>
-        <text x="${left}" y="17" fill="#1d1d1f" font-size="11" font-weight="900">℃</text>
-        <text x="${width - right}" y="17" text-anchor="end" fill="#6e6e73" font-size="10" font-weight="900">30초 포인트 기준선 8℃</text>
+        <text x="${left - 40}" y="${top + graphH / 2}" transform="rotate(-90 ${left - 40} ${top + graphH / 2})" text-anchor="middle" fill="#1d1d1f" font-size="11" font-weight="900">온도(℃)</text>
+        <text x="${left + graphW / 2}" y="${top + graphH + 34}" text-anchor="middle" fill="#6e6e73" font-size="10" font-weight="900">현재 기준 시간(분)</text>
         <text x="${width - right}" y="${(y(8) - 6).toFixed(1)}" text-anchor="end" fill="#d92d20" font-size="10" font-weight="900">주의 기준</text>
-        <g transform="translate(${left},${height - 36})">
+        <g transform="translate(${left},${height - 24})">
           <rect x="0" y="0" width="10" height="10" rx="3" fill="#fff4df" stroke="#f79009" stroke-opacity=".35"/><text x="16" y="9" fill="#6e6e73" font-size="10" font-weight="800">정차 구간</text>
           <circle cx="84" cy="5" r="3" fill="#0066cc"/><text x="92" y="9" fill="#6e6e73" font-size="10" font-weight="800">현재</text>
-          <circle cx="136" cy="5" r="3" fill="#d92d20"/><text x="144" y="9" fill="#6e6e73" font-size="10" font-weight="800">초과</text>
+          <circle cx="136" cy="5" r="3" fill="#d92d20"/><text x="144" y="9" fill="#6e6e73" font-size="10" font-weight="800">경고 구간</text>
         </g>
       </svg>`;
     }
@@ -923,9 +1078,60 @@
       const riskMinutes = points.filter((point) => point.risk || point.temp >= 8).length * (TEMP_GRAPH_STEP_MS / 60000);
       return { latest, max, avg, riskMinutes };
     }
-    function temperatureEventLog(vehicle) {
-      const logs = vehicle.tempEvents?.length ? vehicle.tempEvents : [{ at: simulatedNowMs(), status: "normal", temp: Number(vehicle.temp || vehicle.baseTemp || 0).toFixed(1), message: "온도 변화 수집 대기" }];
-      return logs.map((event) => `<div class="log-row ${event.status === "risk" ? "risk" : event.status === "resolved" ? "resolved" : ""}"><i>${event.status === "resolved" ? "✓" : event.status === "risk" ? "!" : "온"}</i><div><b>${safeText(event.message)}</b><span>${timeLabel(event.at)} ${event.temp}℃</span></div></div>`).join("");
+    function temperatureTimelineEvents(vehicle) {
+      const nowMs = simulatedNowMs();
+      const stopEvents = scheduledArrivalEvents(vehicle, nowMs, TEMP_TIMELINE_FUTURE_MS).sort((a, b) => a.at - b.at);
+      const rows = [];
+      stopEvents.forEach((event) => {
+        const dwellEnd = event.at + stopDwellMs();
+        if (event.at > nowMs) {
+          rows.push({
+            at: event.at,
+            type: "planned",
+            icon: "예",
+            title: `${event.stopName} 정차·하차 예정`,
+            detail: `${timeLabel(dwellEnd)}까지 · ETA 기준`
+          });
+          return;
+        }
+        rows.push({ at: event.at, type: "arrival", icon: "도", title: `${event.stopName} 도착`, detail: "정차 시작, 온도기록계 확인" });
+        const riseAt = event.at + STOP_TEMP_RISE_MS;
+        if (riseAt <= nowMs) rows.push({ at: riseAt, type: "warn", icon: "상", title: "정차 중 온도 상승", detail: `${safeText(event.stopName)} 하차 구간` });
+        const resolvedAt = event.at + STOP_TEMP_RISE_MS + STOP_TEMP_FALL_MS;
+        if (resolvedAt <= nowMs) rows.push({ at: resolvedAt, type: "resolved", icon: "✓", title: "온도 안정", detail: "하차 완료 후 정상 범위 복귀" });
+        else if (dwellEnd > nowMs) rows.push({ at: Math.min(dwellEnd - 1, event.at + 1000), type: "planned", icon: "하", title: "정차·하차 중", detail: `${timeLabel(dwellEnd)}까지 하차 블럭` });
+      });
+      (vehicle.tempEvents || []).forEach((event) => rows.push({
+        at: event.at,
+        type: event.status === "risk" ? "risk" : event.status === "resolved" ? "resolved" : "normal",
+        icon: event.status === "resolved" ? "✓" : event.status === "risk" ? "!" : "온",
+        title: event.message,
+        detail: `${event.temp}℃`
+      }));
+      const unique = new Map();
+      rows.sort((a, b) => a.at - b.at).forEach((row) => {
+        const key = `${Math.round(row.at / 1000)}:${row.type}:${row.title}`;
+        if (!unique.has(key)) unique.set(key, row);
+      });
+      return [...unique.values()];
+    }
+    function temperatureTimelineRows(vehicle) { return temperatureTimelineEvents(vehicle); }
+    function temperatureTimelineSignature(rows) {
+      // Keep live telemetry from rewriting the scrollable log every tick.
+      // Arrival/risk rows change the signature; purely cosmetic second-by-second ETA drift does not.
+      return rows.map((event) => `${event.type}:${event.title}:${Math.floor(event.at / 60000)}`).join("|");
+    }
+    function temperatureTimelineHtml(rows) {
+      if (!rows.length) return `<div class="log-row"><i>온</i><div><b>온도 기록 수집 대기</b><span>${timeLabel(simulatedNowMs())} 정상 범위 유지</span></div></div>`;
+      return rows.map((event) => `<div class="log-row ${safeText(event.type)}"><i>${safeText(event.icon)}</i><div><b>${safeText(event.title)}</b><span>${timeLabel(event.at)} · ${safeText(event.detail)}</span></div></div>`).join("");
+    }
+    function temperatureTimeline(vehicle) { return temperatureTimelineHtml(temperatureTimelineRows(vehicle)); }
+    function temperatureKpis(vehicle) {
+      const stats = temperatureStats(vehicle);
+      return `<div class="temp-kpi"><span>현재</span><b>${stats.latest.toFixed(1)}℃</b></div>
+          <div class="temp-kpi"><span>평균</span><b>${stats.avg.toFixed(1)}℃</b></div>
+          <div class="temp-kpi"><span>최고</span><b>${stats.max.toFixed(1)}℃</b></div>
+          <div class="temp-kpi ${stats.riskMinutes ? "risk" : ""}"><span>경고</span><b>${stats.riskMinutes ? `${Math.round(stats.riskMinutes)}분` : "없음"}</b></div>`;
     }
     function stopNotes(vehicle, stop) {
       const entrances = ["후문 지하주차장 B1 하역장 이용", "건물 북측 약품 반입구 사용", "정문 혼잡 시 우측 서비스도로 진입", "1층 보안데스크에서 약제팀 호출"];
@@ -956,20 +1162,15 @@
         </div>`;
     }
     function temperaturePanel(vehicle) {
-      const events = arrivalEventsFor(vehicle).slice(-3).reverse();
-      const stats = temperatureStats(vehicle);
-      return `<div class="expansion-title"><span>온도 변화 그래프</span>${latestTempStatus(vehicle)}</div>
-        <div class="axis-note"><span>현재 기준 최근 1시간</span><span>30초 포인트 1분30초 상승/하강</span></div>
-        <div class="temp-kpis">
-          <div class="temp-kpi"><span>현재 온도</span><b>${stats.latest.toFixed(1)}℃</b></div>
-          <div class="temp-kpi"><span>1시간 평균</span><b>${stats.avg.toFixed(1)}℃</b></div>
-          <div class="temp-kpi"><span>1시간 최고</span><b>${stats.max.toFixed(1)}℃</b></div>
-          <div class="temp-kpi ${stats.riskMinutes ? "risk" : ""}"><span>기준 초과</span><b>${stats.riskMinutes ? `${Math.round(stats.riskMinutes)}분` : "없음"}</b></div>
+      const rows = temperatureTimelineRows(vehicle);
+      return `<div class="expansion-title"><span>온도 기록</span><span id="temperatureStatus">${latestTempStatus(vehicle)}</span></div>
+        <div class="temp-kpis" id="temperatureKpis">
+          ${temperatureKpis(vehicle)}
         </div>
-        ${temperatureGraph(vehicle)}
-        <div class="event-log">
-          ${events.map((event) => `<div class="log-row"><i>도</i><div><b>${safeText(event.stopName)} 도착</b><span>${timeLabel(event.at)} 정차 구간 주의</span></div></div>`).join("")}
-          ${temperatureEventLog(vehicle)}
+        <div id="temperatureGraphWrap">${temperatureGraph(vehicle)}</div>
+        <div class="event-log-title"><span>도착·온도 타임라인</span><span class="chip mini" id="temperatureTimelineCount">${rows.length || 1}건</span></div>
+        <div class="event-log" id="temperatureTimelineLog" data-signature="${safeText(temperatureTimelineSignature(rows))}">
+          ${temperatureTimelineHtml(rows)}
         </div>`;
     }
     function selectedStop() { return selectedVehicle().stops[state.selectedStopNo - 1] || selectedVehicle().stops[0]; }
@@ -1189,7 +1390,9 @@
     function renderControlPage() {
       const vehicle = selectedVehicle();
       const stop = selectedStop();
-      $("sideContent").innerHTML = `
+      const sideContent = $("sideContent");
+      sideContent.className = `panel-view ${state.destinationCollapsed ? "destination-collapsed" : ""}`.trim();
+      sideContent.innerHTML = `
           <section class="card panel expand-card ${state.vehiclePanelOpen ? "expanded" : ""}" id="vehicleCard">
             <aside class="left-expansion temperature-expansion" id="temperaturePanel" aria-label="차량 온도 변화">${temperaturePanel(vehicle)}</aside>
             <div class="tab-line"><span>차량 리스트</span><span class="card-tools"><span class="chip mini">${vehicles.length}대</span><button class="panel-toggle ${state.vehiclePanelOpen ? "active" : ""}" id="vehiclePanelToggle" type="button">${state.vehiclePanelOpen ? "닫기" : "온도"}</button></span></div>
@@ -1198,11 +1401,11 @@
           <section class="card panel expand-card ${state.destinationNoteOpen ? "expanded" : ""} ${state.destinationCollapsed ? "collapsed" : ""}" id="destinationCard">
             <aside class="left-expansion" aria-label="배송지 노트">${destinationNotePanel(vehicle, stop)}</aside>
             <div class="tab-line"><span>배송지 리스트</span><span class="card-tools"><span class="chip mini" id="destinationChip">12개 배송지</span><button class="panel-toggle ${state.destinationNoteOpen ? "active" : ""}" id="notePanelToggle" type="button">${state.destinationNoteOpen ? "닫기" : "노트"}</button></span></div>
-            <div class="collapse-summary" id="destinationSummary">선택 차량 다음 배송지</div>
+            <div class="collapse-summary" id="destinationSummary">${destinationCollapseSummary(vehicle)}</div>
             <div class="stops" id="destinationList"></div>
             <button class="collapse-btn" id="destinationToggle" type="button">${state.destinationCollapsed ? "펼치기" : "접기"}</button>
           </section>`;
-      renderFleet(); renderStops(); patchSelectedDriverCard();
+      renderFleet(); renderStops(); patchSelectedDriverCard(); bindTemperatureTimelineLock();
       $("vehiclePanelToggle")?.addEventListener("click", () => { state.vehiclePanelOpen = !state.vehiclePanelOpen; if (state.vehiclePanelOpen) state.destinationNoteOpen = false; renderSide(); });
       $("notePanelToggle")?.addEventListener("click", () => { state.destinationNoteOpen = !state.destinationNoteOpen; if (state.destinationNoteOpen) state.vehiclePanelOpen = false; renderSide(); });
       $("destinationToggle")?.addEventListener("click", toggleDestinations);
@@ -1418,64 +1621,168 @@
       });
     }
 
-    function renderCourierPage() {
+    function courierDeliveryHistory(courier, assignedVehicles = vehiclesForCourier(courier)) {
+      const sourceVehicles = assignedVehicles.length ? assignedVehicles : vehicles.slice(0, 1);
+      const nowMs = simulatedNowMs();
+      const proofStatus = (seed) => {
+        const missing = Math.abs(seed) % 5 === 0;
+        const partial = Math.abs(seed) % 4 === 0;
+        if (missing) return { label: "미비 1건", tone: "amber" };
+        if (partial) return { label: "2건 완료", tone: "blue" };
+        return { label: "3건 완료", tone: "green" };
+      };
+      const current = sourceVehicles.flatMap((vehicle) => {
+        const doneStops = vehicle.stops.slice(0, Math.min(vehicle.done || 0, vehicle.stops.length));
+        return doneStops.map((stop, index) => {
+          const arrival = (vehicle.arrivalEvents || []).find((event) => event.stopNo === stop.no);
+          const at = arrival?.at || nowMs - (doneStops.length - index) * 9 * 60 * 1000;
+          return { at, stop, vehicle, proof: proofStatus(stop.no + index) };
+        });
+      });
+      const seed = Number(String(courier.id).replace(/\D/g, "")) || 1;
+      const fallback = Array.from({ length: 8 }, (_, index) => {
+        const vehicle = sourceVehicles[index % sourceVehicles.length] || vehicles[(seed + index) % vehicles.length];
+        const stop = vehicle.stops[(seed + index * 2) % vehicle.stops.length];
+        const at = nowMs - (index + 1) * 24 * 60 * 60 * 1000 - (seed * 11 + index * 17) * 60 * 1000;
+        return { at, stop, vehicle, proof: proofStatus(seed + index) };
+      });
+      return [...current, ...fallback].sort((a, b) => b.at - a.at).slice(0, 8);
+    }
+
+    function courierPageModel() {
       const courier = selectedCourier();
-      const assigned = vehiclesForCourier(courier);
-      const selected = selectedVehicle();
-      const tracking = trackedVehicle();
-      renderPage("배송원", "배송원별 배정 차량, 담당 권역, 현장 특징을 확인합니다.", `
-        <div class="courier-grid">
-          <section class="page-panel">
-            <div class="tab-line"><span>배송원 리스트</span><span class="chip mini">${couriers.length}명</span></div>
-            <div class="courier-list">
-              ${couriers.map((person) => {
-                const count = vehiclesForCourier(person).length;
-                return `<button class="courier-card ${person.id === courier.id ? "active" : ""}" type="button" data-courier="${person.id}">
-                  <span class="driver-avatar" aria-hidden="true">${person.avatar}</span>
-                  <span><strong>${safeText(person.name)}</strong><small>${person.age}세 ${person.gender} ${safeText(person.zone)}</small></span>
-                  <span class="chip mini">${count}대</span>
-                </button>`;
-              }).join("")}
-            </div>
-          </section>
-          <section class="page-panel">
-            <div class="courier-detail-head">
-              <div class="driver-avatar" aria-hidden="true">${courier.avatar}</div>
-              <div>
-                <div class="tab-line"><span>${safeText(courier.name)}</span><span class="chip ${courier.score === "S" ? "green" : "blue"}">등급 ${safeText(courier.score)}</span></div>
-                <p class="tab-copy">${courier.age}세 ${courier.gender} ${safeText(courier.career)} ${safeText(courier.zone)}</p>
-                <div class="trait-list">${courier.traits.map((trait) => `<span>${safeText(trait)}</span>`).join("")}</div>
-              </div>
-            </div>
-            <div class="work-section">
-              <div class="tab-line"><span>현재 추적</span><span class="chip ${tracking ? "blue" : "mini"}" id="courierTrackingChip">${tracking ? tracking.plate : "차량 선택 대기"}</span></div>
-              <p class="tab-copy" id="courierTrackingText">${tracking ? `${safeText(courierFor(tracking).name)} ${safeText(vehicleStatus(tracking).label)} ${safeText(vehicleLocationText(tracking))}` : "관제 화면이나 아래 배정 차량을 클릭하면 실시간 트래킹이 시작됩니다."}</p>
-            </div>
-            <div class="work-section">
-              <div class="tab-line"><span>배정 차량</span><span class="chip mini">${assigned.length}대</span></div>
-              <div class="assigned-list">
-                ${assigned.map((vehicle) => {
-                  const status = vehicleStatus(vehicle);
-                  return `<button class="assigned-row ${vehicle.id === selected.id ? "active" : ""}" type="button" data-courier-vehicle="${vehicle.id}">
-                    <span><strong>${safeText(vehicle.plate)}</strong><br><small data-assigned-location>${safeText(vehicleLocationText(vehicle))}</small></span>
-                    <span class="${etaChipClass(vehicle)}" data-assigned-status>${status.label} ${etaText(vehicle)}</span>
-                  </button>`;
-                }).join("") || `<div class="tab-copy">현재 배정 차량이 없습니다.</div>`}
-              </div>
-            </div>
-          </section>
-        </div>`, "", "dynamic-page couriers-page");
-      document.querySelectorAll("[data-courier]").forEach((button) => button.addEventListener("click", () => {
-        state.selectedCourierId = button.dataset.courier;
-        const first = vehiclesForCourier(selectedCourier())[0];
-        if (first) {
-          state.selectedVehicleId = first.id;
-          state.selectedStopNo = Math.min(Math.max(first.done + 1, 1), first.stops.length);
-        }
-        renderCourierPage();
-        updateMapData();
-      }));
-      document.querySelectorAll("[data-courier-vehicle]").forEach((button) => button.addEventListener("click", () => selectVehicle(button.dataset.courierVehicle, null, true)));
+      const assignedVehicles = vehiclesForCourier(courier);
+      return {
+        couriers,
+        courier,
+        assignedVehicles,
+        activeVehicle: selectedVehicle(),
+        spotlightVehicleId: state.spotlightVehicleId,
+        history: courierDeliveryHistory(courier, assignedVehicles),
+      };
+    }
+
+    // Single-file demo constraint: these pure string components keep the page shaped like React
+    // without introducing a build step or runtime dependency.
+    function CourierPage(props) {
+      return `<div class="courier-grid">
+        ${CourierListPanel(props)}
+        ${CourierDetailPanel(props)}
+      </div>`;
+    }
+
+    function CourierListPanel({ couriers: courierItems, courier }) {
+      return `<section class="page-panel">
+        <div class="tab-line"><span>배송원 리스트</span><span class="chip mini">${courierItems.length}명</span></div>
+        <div class="courier-list">
+          ${courierItems.map((person) => CourierListItem({ person, active: person.id === courier.id })).join("")}
+        </div>
+      </section>`;
+    }
+
+    function CourierListItem({ person, active }) {
+      const count = vehiclesForCourier(person).length;
+      return `<button class="courier-card ${active ? "active" : ""}" type="button" data-courier="${person.id}">
+        <span class="driver-avatar" aria-hidden="true">${safeText(person.avatar)}</span>
+        <span><strong>${safeText(person.name)}</strong><small>${person.age}세 ${safeText(person.gender)} ${safeText(person.zone)}</small></span>
+        <span class="chip mini">${count}대</span>
+      </button>`;
+    }
+
+    function CourierDetailPanel({ courier, assignedVehicles, activeVehicle, spotlightVehicleId, history }) {
+      return `<section class="page-panel courier-detail-panel">
+        ${CourierProfileSection({ courier })}
+        ${CourierVehicleSection({ assignedVehicles, activeVehicleId: activeVehicle.id, spotlightVehicleId })}
+        ${CourierHistorySection({ history })}
+      </section>`;
+    }
+
+    function CourierProfileSection({ courier }) {
+      const gradeClass = courier.score === "S" ? "green" : "blue";
+      return `<div class="tab-line"><span>배송원</span><span class="chip ${gradeClass}">등급 ${safeText(courier.score)}</span></div>
+        <div class="courier-detail-head compact">
+          <div class="driver-avatar" aria-hidden="true">${safeText(courier.avatar)}</div>
+          <div>
+            <div class="courier-person-line"><strong>${safeText(courier.name)}</strong><small>${courier.age}세 ${safeText(courier.gender)}</small></div>
+            <p class="tab-copy">${safeText(courier.career)} ${safeText(courier.zone)}</p>
+          </div>
+        </div>
+        <div class="trait-list">${courier.traits.map((trait) => `<span>${safeText(trait)}</span>`).join("")}</div>`;
+    }
+
+    function CourierVehicleSection({ assignedVehicles, activeVehicleId, spotlightVehicleId }) {
+      return `<div class="work-section">
+        <div class="tab-line"><span>차량</span><span class="chip mini">${assignedVehicles.length}대</span></div>
+        <div class="courier-vehicle-list">
+          ${assignedVehicles.map((vehicle) => CourierVehicleRow({
+            vehicle,
+            active: vehicle.id === activeVehicleId || vehicle.id === spotlightVehicleId,
+          })).join("") || `<div class="tab-copy">현재 배정 차량이 없습니다.</div>`}
+        </div>
+      </div>`;
+    }
+
+    function CourierVehicleRow({ vehicle, active }) {
+      const status = vehicleStatus(vehicle);
+      return `<button class="courier-vehicle-row ${active ? "active" : ""}" type="button" data-courier-vehicle="${vehicle.id}">
+        <span><strong>${safeText(vehicle.plate)}</strong><small data-assigned-location>${safeText(vehicleLocationText(vehicle))}</small></span>
+        <span class="${etaChipClass(vehicle)}" data-assigned-status>${safeText(status.label)} ${safeText(etaText(vehicle))}</span>
+      </button>`;
+    }
+
+    function CourierHistorySection({ history }) {
+      return `<div class="work-section">
+        <div class="tab-line"><span>배송 이력</span><span class="chip mini">최근 완료 ${history.length}건</span></div>
+        <div class="courier-history-scroll">
+          <table class="page-table courier-history-table">
+            <thead><tr><th>완료 시간</th><th>배송지</th><th>차량</th><th>증빙</th></tr></thead>
+            <tbody>
+              ${history.map(CourierHistoryRow).join("") || `<tr><td colspan="4">최근 완료 이력이 없습니다.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+    }
+
+    function CourierHistoryRow(row) {
+      const proof = row.proof || { label: "확인 필요", tone: "amber" };
+      return `<tr>
+        <td>${safeText(timeLabel(row.at))}</td>
+        <td>${safeText(row.stop.name)}</td>
+        <td>${safeText(row.vehicle.plate)}</td>
+        <td><span class="chip ${safeText(proof.tone)}">${safeText(proof.label)}</span></td>
+      </tr>`;
+    }
+
+    function selectCourier(courierId) {
+      state.selectedCourierId = courierId;
+      const first = vehiclesForCourier(selectedCourier())[0];
+      if (first) {
+        state.selectedVehicleId = first.id;
+        state.selectedStopNo = Math.min(Math.max(first.done + 1, 1), first.stops.length);
+      }
+      renderCourierPage();
+      updateMapData();
+    }
+
+    function bindCourierPageEvents(root = document) {
+      root.querySelectorAll("[data-courier]").forEach((button) => {
+        button.addEventListener("click", () => selectCourier(button.dataset.courier));
+      });
+      root.querySelectorAll("[data-courier-vehicle]").forEach((button) => {
+        button.addEventListener("click", () => selectVehicle(button.dataset.courierVehicle, null, true));
+      });
+    }
+
+    function renderCourierPage() {
+      renderPage(
+        "배송원",
+        "배송원별 배정 차량, 담당 권역, 현장 특징을 확인합니다.",
+        CourierPage(courierPageModel()),
+        "",
+        "dynamic-page couriers-page"
+      );
+      bindCourierPageEvents($("pageContent"));
     }
 
     function renderIssuePage() {
@@ -1573,10 +1880,29 @@
         row.addEventListener("click", () => { if (!window.PointerEvent) pickVehicle(); });
       });
     }
+    function destinationCollapseData(vehicle = selectedVehicle()) {
+      if (vehicle.completed) {
+        const stop = vehicle.stops.at(-1);
+        return { label: "배송 완료", name: stop?.name || "운행 종료", eta: "완료" };
+      }
+      const dwell = dwellRemainingMs(vehicle);
+      if (dwell > 0 && vehicle.done > 0) {
+        const stop = vehicle.stops[vehicle.done - 1];
+        return { label: "정차·하차 중", name: stop?.name || vehicleLocationText(vehicle), eta: timeLabel(vehicle.waitUntil) };
+      }
+      const stopNo = nextStopNo(vehicle) || 1;
+      const stop = vehicle.stops[stopNo - 1] || vehicle.stops[0];
+      const eta = stopEtaList(vehicle)[stopNo - 1] || etaText(vehicle);
+      return { label: "다음 배송지", name: stop?.name || vehicleLocationText(vehicle), eta };
+    }
+    function destinationCollapseSummary(vehicle = selectedVehicle()) {
+      const data = destinationCollapseData(vehicle);
+      return `<span><strong>${safeText(data.name)}</strong><small>${safeText(data.label)}</small></span><b>${safeText(data.eta)}</b>`;
+    }
     function renderStops() {
       const vehicle = selectedVehicle();
       $("destinationChip").textContent = `${vehicle.stops.length}개 배송지`;
-      $("destinationSummary").textContent = vehicleMotionText(vehicle);
+      $("destinationSummary").innerHTML = destinationCollapseSummary(vehicle);
       const etaList = stopEtaList(vehicle);
       const destinationList = $("destinationList");
       const scrollTop = destinationList.scrollTop;
@@ -1591,17 +1917,29 @@
     }
     function toggleDestinations() {
       state.destinationCollapsed = !state.destinationCollapsed;
-      $("destinationCard").classList.toggle("collapsed", state.destinationCollapsed);
+      if (state.destinationCollapsed) state.destinationNoteOpen = false;
+      const side = $("sideContent");
+      const card = $("destinationCard");
+      side?.classList.toggle("destination-collapsed", state.destinationCollapsed);
+      card?.classList.add("is-animating");
+      card?.classList.toggle("collapsed", state.destinationCollapsed);
+      clearTimeout(state.destinationAnimationTimer);
+      state.destinationAnimationTimer = setTimeout(() => card?.classList.remove("is-animating"), 320);
       $("destinationToggle").textContent = state.destinationCollapsed ? "펼치기" : "접기";
+      const summary = $("destinationSummary");
+      if (summary) summary.innerHTML = destinationCollapseSummary(selectedVehicle());
     }
     function renderSide() {
       state.lastPanelRenderAt = performance.now();
+      const temperatureScroll = captureTemperatureTimelineScroll();
       if (state.activeTab === "couriers") return renderCourierPage();
       if (state.activeTab === "work") return renderWorkPage();
       if (state.activeTab === "issue") return renderIssuePage();
       if (state.activeTab === "settings") return renderSettingsPage();
       setPageMode(true);
-      return renderControlPage();
+      const result = renderControlPage();
+      restoreTemperatureTimelineScroll(document, temperatureScroll);
+      return result;
     }
     function updateChipClass(chip, vehicle) {
       chip.className = etaChipClass(vehicle);
@@ -1633,20 +1971,73 @@
       });
       fleet.scrollTop = scrollTop;
     }
+    function temperatureTimelineElement(root = document) { return root.querySelector("#temperatureTimelineLog, #temperaturePanel .event-log"); }
+    function captureTemperatureTimelineScroll(root = document) {
+      const timeline = temperatureTimelineElement(root);
+      if (!timeline) return null;
+      return {
+        vehicleId: state.selectedVehicleId,
+        scrollTop: timeline.scrollTop,
+        atBottom: timeline.scrollTop + timeline.clientHeight >= timeline.scrollHeight - 4
+      };
+    }
+    function restoreTemperatureTimelineScroll(root = document, snapshot = null) {
+      if (!snapshot || snapshot.vehicleId !== state.selectedVehicleId) return;
+      const timeline = temperatureTimelineElement(root);
+      if (!timeline) return;
+      const maxScrollTop = Math.max(0, timeline.scrollHeight - timeline.clientHeight);
+      timeline.scrollTop = snapshot.atBottom ? maxScrollTop : Math.min(snapshot.scrollTop, maxScrollTop);
+    }
+    function markTemperatureTimelineUserActive() { state.temperatureTimelineUserUntil = performance.now() + 1600; }
+    function bindTemperatureTimelineLock(root = document) {
+      const timeline = temperatureTimelineElement(root);
+      if (!timeline || timeline.dataset.scrollLockBound === "true") return;
+      timeline.dataset.scrollLockBound = "true";
+      ["scroll", "wheel", "pointerdown", "touchstart", "keydown"].forEach((eventName) => {
+        timeline.addEventListener(eventName, markTemperatureTimelineUserActive, { passive: true });
+      });
+    }
+    function renderTemperaturePanel(panel, vehicle, preserveTimelineScroll = false) {
+      const timelineScroll = preserveTimelineScroll ? captureTemperatureTimelineScroll(panel) : null;
+      panel.innerHTML = temperaturePanel(vehicle);
+      bindTemperatureTimelineLock(panel);
+      restoreTemperatureTimelineScroll(panel, timelineScroll);
+    }
     function patchExpansionPanels() {
       const vehicle = selectedVehicle(), stop = selectedStop();
       const vehiclePanel = document.querySelector("#vehicleCard .left-expansion");
-      if (vehiclePanel && state.vehiclePanelOpen) vehiclePanel.innerHTML = temperaturePanel(vehicle);
+      if (vehiclePanel && state.vehiclePanelOpen) renderTemperaturePanel(vehiclePanel, vehicle, true);
       const notePanel = document.querySelector("#destinationCard .left-expansion");
       if (notePanel && state.destinationNoteOpen) notePanel.innerHTML = destinationNotePanel(vehicle, stop);
+    }
+    function patchLiveTemperatureTimeline(log, rows, signature) {
+      const userLocked = performance.now() < state.temperatureTimelineUserUntil;
+      if (log.dataset.signature === signature) return;
+      if (userLocked) { state.pendingTemperatureTimelineSignature = signature; return; }
+      const snapshot = captureTemperatureTimelineScroll(log.parentElement || document);
+      log.innerHTML = temperatureTimelineHtml(rows);
+      log.dataset.signature = signature;
+      state.pendingTemperatureTimelineSignature = "";
+      bindTemperatureTimelineLock(log.parentElement || document);
+      restoreTemperatureTimelineScroll(log.parentElement || document, snapshot);
     }
     function patchLiveTemperaturePanel() {
       if (state.activeTab !== "control" || !state.vehiclePanelOpen) return;
       const panel = $("temperaturePanel");
       if (!panel) return;
-      const scrollTop = panel.scrollTop;
-      panel.innerHTML = temperaturePanel(selectedVehicle());
-      panel.scrollTop = scrollTop;
+      const vehicle = selectedVehicle();
+      const status = $("temperatureStatus");
+      const kpis = $("temperatureKpis");
+      const graph = $("temperatureGraphWrap");
+      const count = $("temperatureTimelineCount");
+      const log = $("temperatureTimelineLog");
+      if (!status || !kpis || !graph || !count || !log) return renderTemperaturePanel(panel, vehicle, true);
+      status.innerHTML = latestTempStatus(vehicle);
+      kpis.innerHTML = temperatureKpis(vehicle);
+      graph.innerHTML = temperatureGraph(vehicle);
+      const rows = temperatureTimelineRows(vehicle);
+      count.textContent = `${rows.length || 1}건`;
+      patchLiveTemperatureTimeline(log, rows, temperatureTimelineSignature(rows));
     }
     function patchSelectedDriverCard() {
       const card = $("floatingDriverCard");
@@ -1658,25 +2049,16 @@
     }
     function patchCourierPageLive() {
       if (state.activeTab !== "couriers") return;
-      const tracking = trackedVehicle();
-      const chip = $("courierTrackingChip");
-      const text = $("courierTrackingText");
-      if (chip) {
-        chip.className = `chip ${tracking ? "blue" : "mini"}`;
-        chip.textContent = tracking ? tracking.plate : "차량 선택 대기";
-      }
-      if (text) text.textContent = tracking ? `${courierFor(tracking).name} ${vehicleStatus(tracking).label} ${vehicleLocationText(tracking)}` : "관제 화면이나 아래 배정 차량을 클릭하면 실시간 트래킹이 시작됩니다.";
       document.querySelectorAll("[data-courier-vehicle]").forEach((row) => {
         const vehicle = vehicles.find((item) => item.id === row.dataset.courierVehicle);
         if (!vehicle) return;
         const status = vehicleStatus(vehicle);
-        row.classList.toggle("active", vehicle.id === state.spotlightVehicleId);
+        row.classList.toggle("active", vehicle.id === state.selectedVehicleId || vehicle.id === state.spotlightVehicleId);
         const location = row.querySelector("[data-assigned-location]");
         if (location) location.textContent = vehicleLocationText(vehicle);
         const statusEl = row.querySelector("[data-assigned-status]");
         if (statusEl) {
           statusEl.className = etaChipClass(vehicle);
-          statusEl.dataset.assignedStatus = "";
           statusEl.textContent = `${status.label} ${etaText(vehicle)}`;
         }
       });
@@ -1809,7 +2191,7 @@
       const destinationChip = $("destinationChip");
       if (destinationChip) destinationChip.textContent = `${vehicle.stops.length}개 배송지`;
       const destinationSummary = $("destinationSummary");
-      if (destinationSummary) destinationSummary.textContent = vehicleMotionText(vehicle);
+      if (destinationSummary) destinationSummary.innerHTML = destinationCollapseSummary(vehicle);
 
       vehicle.stops.forEach((stop) => {
         const row = destinationList.querySelector(`[data-stop="${stop.no}"]`);
@@ -1904,10 +2286,14 @@
         routeSelected: selected && selectedMapRoute ? routeFeature(selectedMapRoute, { vehicleId: selected.id }) : fc([]),
         routeDone: selected && selectedMapRoute ? routeFeature(completedRoute(selectedMapRoute, selected.meters), { vehicleId: selected.id }) : fc([]),
         routeNext: nextRoute.length > 1 ? routeFeature(nextRoute, { vehicleId: selected.id }) : fc([]),
-        stops: fc(vehicles.flatMap((vehicle) => vehicle.stops.map((stop) => pointFeature(stop.coord, {
-          vehicleId: vehicle.id, stopNo: stop.no, label: String(stop.no), pinImage: stopPinImage(vehicle, stop, selected), selected: !!selected && vehicle.id === selected.id, active: !!selected && vehicle.id === selected.id && stop.no === state.selectedStopNo,
-          done: stop.no <= vehicle.done, risk: stop.no === riskStopNo(vehicle), mutedDestination: !!selected && vehicle.id !== selected.id
-        })))),
+        stops: fc(vehicles.flatMap((vehicle) => vehicle.stops.map((stop) => {
+          const isSpotlightVehicle = !!selected && vehicle.id === selected.id;
+          const isNextStop = isSpotlightVehicle && stop.no === nextStopNo(vehicle);
+          return pointFeature(stop.coord, {
+            vehicleId: vehicle.id, stopNo: stop.no, label: String(stop.no), pinImage: stopPinImage(vehicle, stop, selected), selected: isSpotlightVehicle, active: isNextStop,
+            done: stop.no <= vehicle.done, risk: stop.no === riskStopNo(vehicle), mutedDestination: !!selected && vehicle.id !== selected.id, nextStop: isNextStop
+          });
+        }))),
         dropoffs: fc(vehicles.flatMap((vehicle) => dropoffsOf(vehicle).flatMap((coord, i) => {
           if (i + 1 <= vehicle.done) return [];
           return [pointFeature(coord, { vehicleId: vehicle.id, stopNo: i + 1, label: `정차 ${i + 1}`, selected: !!selected && vehicle.id === selected.id, active: !!selected && vehicle.id === selected.id && i + 1 === state.selectedStopNo })];
@@ -1916,7 +2302,7 @@
           const isSpotlight = !!selected && vehicle.id === selected.id;
           return pointFeature(vehiclePosition(vehicle), {
             vehicleId: vehicle.id,
-            label: vehicle.plate.split(" ")[0],
+            label: vehicle.plate,
             selected: isSpotlight,
             markerImage: isSpotlight ? "vehicle-marker-spotlight" : "vehicle-marker-default",
             risk: !!vehicle.risk
@@ -1925,10 +2311,10 @@
       };
     }
     function stopPinImage(vehicle, stop, selected) {
-      if (selected && vehicle.id !== selected.id) return "stop-pin-muted";
+      const isSpotlightVehicle = !!selected && vehicle.id === selected.id;
+      if (selected && !isSpotlightVehicle) return "stop-pin-muted";
       if (stop.no === riskStopNo(vehicle)) return "stop-pin-risk";
-      if (stop.no <= vehicle.done) return "stop-pin-done";
-      return selected && vehicle.id === selected.id ? "stop-pin-selected" : "stop-pin-default";
+      return isSpotlightVehicle && stop.no === nextStopNo(vehicle) ? "stop-pin-selected" : "stop-pin-default";
     }
     function createStopPinImage(color, stroke = "#ffffff") {
       if (typeof Path2D === "undefined") return null;
@@ -1953,8 +2339,8 @@
     }
     function ensureStopPinImages() {
       const images = [
-        ["stop-pin-default", "#303030"],
-        ["stop-pin-selected", "#1f8b4c"],
+        ["stop-pin-default", DESTINATION_MARKER_BLUE],
+        ["stop-pin-selected", DESTINATION_MARKER_GREEN],
         ["stop-pin-muted", VEHICLE_MARKER_DEFAULT],
         ["stop-pin-done", "#8e8e93"],
         ["stop-pin-risk", "#d92d20"]
@@ -1983,9 +2369,12 @@
       context.shadowColor = "rgba(0, 0, 0, 0.18)";
       context.shadowOffsetY = 2;
       context.fillStyle = color;
+      context.strokeStyle = "#ffffff";
+      context.lineWidth = 2;
       context.beginPath();
       context.arc(32, 32, 18, 0, Math.PI * 2);
       context.fill();
+      context.stroke();
       context.restore();
 
       context.save();
@@ -2021,7 +2410,7 @@
         "origin", "origin-label",
         "dropoffs", "dropoff-labels",
         "stop-points", "stop-point-labels",
-        "stops", "stop-labels",
+        "stops",
         "vehicles", "vehicle-labels"
       ].forEach((layer) => {
         if (state.map.getLayer(layer)) state.map.moveLayer(layer);
@@ -2031,7 +2420,7 @@
       $("destinationPointBtn")?.classList.toggle("active", state.destinationDisplayMode === "point");
       $("destinationMarkerBtn")?.classList.toggle("active", state.destinationDisplayMode === "marker");
       if (!state.map) return;
-      [["stops", "marker"], ["stop-labels", "marker"], ["stop-points", "point"], ["stop-point-labels", "point"]].forEach(([layer, mode]) => {
+      [["stops", "marker"], ["stop-points", "point"], ["stop-point-labels", "point"]].forEach(([layer, mode]) => {
         if (state.map.getLayer(layer)) state.map.setLayoutProperty(layer, "visibility", destinationLayerVisibility(mode));
       });
       promoteRouteAndMarkerLayers();
@@ -2100,12 +2489,38 @@
       state.lastTrackingSampleAt = sampleMs;
       easeMap({ center: coord, zoom: 14.2, duration: force ? 450 : 220, essential: true });
     }
-    function selectDestination(stopNo) {
-      state.selectedStopNo = stopNo;
+    function destinationFocusCoord(vehicle, stopNo) {
+      return dropoffsOf(vehicle)[stopNo - 1] || vehicle.stops[stopNo - 1]?.coord;
+    }
+    function selectDestination(stopNo, vehicleId = state.selectedVehicleId) {
+      // Destination clicks are stop/dropoff inspection actions, not vehicle tracking actions.
+      // Stop active tracking first so the camera cannot snap back to the vehicle after zoom-in.
+      clearVehicleTracking("destination-focus");
+      const previousVehicleId = state.selectedVehicleId;
+      const vehicle = vehicleById(vehicleId) || selectedVehicle();
+      state.selectedVehicleId = vehicle.id;
+      state.selectedCourierId = vehicle.courierId;
+      state.selectedStopNo = Math.min(Math.max(Number(stopNo) || 1, 1), vehicle.stops.length);
       updateMapData();
-      refreshControlSelection(false);
-      const coord = selectedVehicle().stops[stopNo - 1]?.coord;
-      if (coord) easeMap({ center: coord, zoom: 15.8, duration: 550 });
+      refreshControlSelection(previousVehicleId !== vehicle.id);
+      const coord = destinationFocusCoord(vehicle, state.selectedStopNo);
+      if (coord) easeMap({ center: coord, zoom: DESTINATION_FOCUS_ZOOM, duration: 550, essential: true });
+    }
+    function suppressMapVehicleClick(event) {
+      state.destinationClickLockUntil = performance.now() + 450;
+      event?.preventDefault?.();
+      event?.originalEvent?.stopPropagation?.();
+    }
+    function destinationFeatureAtEvent(event) {
+      if (!state.map || !event?.point) return null;
+      const layers = ["stops", "stop-points", "dropoffs"].filter((layer) => state.map.getLayer(layer));
+      return state.map.queryRenderedFeatures(event.point, { layers }).find((feature) => Number(feature.properties?.stopNo));
+    }
+    function selectDestinationFeature(feature, event) {
+      if (!feature?.properties) return false;
+      suppressMapVehicleClick(event);
+      selectDestination(Number(feature.properties.stopNo), feature.properties.vehicleId);
+      return true;
     }
     function selectVehicle(id, stopNo = null, enableTracking = true) {
       const previousVehicleId = state.selectedVehicleId;
@@ -2191,21 +2606,27 @@
       state.map.addLayer({ id: "origin-label", type: "symbol", source: "origin", layout: { "text-field": "상차", "text-font": MAP_TEXT_FONT, "text-size": 12, "text-offset": [0, -1.8] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
       state.map.addLayer({ id: "dropoffs", type: "circle", source: "dropoffs", minzoom: 15.5, paint: { "circle-radius": ["case", ["get", "active"], 5, ["get", "selected"], 4, 2.8], "circle-color": "#f79009", "circle-stroke-color": "#1d1d1f", "circle-stroke-width": 1.5 } });
       state.map.addLayer({ id: "dropoff-labels", type: "symbol", source: "dropoffs", minzoom: 15.5, layout: { "text-field": "정차", "text-font": MAP_TEXT_FONT, "text-size": 9, "text-offset": [0, -1.15] }, paint: { "text-color": "#9a5a00", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
-      state.map.addLayer({ id: "stop-points", type: "circle", source: "stops", layout: { "visibility": destinationLayerVisibility("point") }, paint: { "circle-radius": ["case", ["get", "active"], 7, ["get", "selected"], 6, ["get", "done"], 4.6, 5.2], "circle-color": ["case", ["get", "mutedDestination"], VEHICLE_MARKER_DEFAULT, ["get", "risk"], "#d92d20", ["get", "active"], "#1f8b4c", ["get", "selected"], "#1f8b4c", ["get", "done"], "#8e8e93", "#1d1d1f"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
-      state.map.addLayer({ id: "stop-point-labels", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("point"), "symbol-sort-key": ["case", ["get", "active"], 4000, ["get", "selected"], 3000, ["get", "done"], 1000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 10 }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.35)", "text-halo-width": .6 } });
-      state.map.addLayer({ id: "stops", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("marker"), "icon-allow-overlap": true, "icon-anchor": "bottom", "icon-ignore-placement": true, "icon-image": ["get", "pinImage"], "icon-size": STOP_PIN_ICON_SIZE, "symbol-sort-key": ["case", ["get", "active"], 4000, ["get", "selected"], 3000, ["get", "done"], 1000, 2000] } });
-      state.map.addLayer({ id: "stop-labels", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("marker"), "symbol-sort-key": ["case", ["get", "active"], 4000, ["get", "selected"], 3000, ["get", "done"], 1000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 11, "text-offset": [0, -1.85] }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.28)", "text-halo-width": .7 } });
+      state.map.addLayer({ id: "stop-points", type: "circle", source: "stops", layout: { "visibility": destinationLayerVisibility("point") }, paint: { "circle-radius": 7, "circle-color": ["case", ["get", "mutedDestination"], VEHICLE_MARKER_DEFAULT, ["get", "risk"], "#d92d20", ["get", "nextStop"], DESTINATION_MARKER_GREEN, DESTINATION_MARKER_BLUE], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+      state.map.addLayer({ id: "stop-point-labels", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("point"), "symbol-sort-key": ["case", ["get", "nextStop"], 4000, ["get", "selected"], 3000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 10 }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.35)", "text-halo-width": .6 } });
+      state.map.addLayer({ id: "stops", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("marker"), "icon-allow-overlap": true, "icon-anchor": "bottom", "icon-ignore-placement": true, "icon-image": ["get", "pinImage"], "icon-size": STOP_PIN_ICON_SIZE, "symbol-sort-key": ["case", ["get", "nextStop"], 4000, ["get", "selected"], 3000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 11, "text-offset": [0, -1.85] }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.28)", "text-halo-width": .7 } });
       state.map.addLayer({ id: "vehicles", type: "symbol", source: "vehicles", layout: { "icon-allow-overlap": true, "icon-anchor": "center", "icon-ignore-placement": true, "icon-image": ["get", "markerImage"], "icon-size": VEHICLE_MARKER_ICON_SIZE, "symbol-sort-key": ["case", ["boolean", ["get", "selected"], false], 5000, 2000] } });
-      state.map.addLayer({ id: "vehicle-labels", type: "symbol", source: "vehicles", layout: { "symbol-sort-key": ["case", ["boolean", ["get", "selected"], false], 5000, 2000], "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-size": 12, "text-offset": [0, -2.55] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+      state.map.addLayer({ id: "vehicle-labels", type: "symbol", source: "vehicles", layout: { "symbol-sort-key": ["case", ["boolean", ["get", "selected"], false], 5000, 2000], "text-allow-overlap": true, "text-anchor": "bottom", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-justify": "center", "text-size": 12, "text-offset": [0, -1.08] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2.2 } });
       ["origin", "vehicles", "stops", "stop-points", "dropoffs", "routes", "route-selected", "route-next", "route-done"].forEach((layer) => {
         state.map.on("mouseenter", layer, () => { state.map.getCanvas().style.cursor = "pointer"; });
         state.map.on("mouseleave", layer, () => { state.map.getCanvas().style.cursor = ""; });
       });
-      state.map.on("click", "vehicles", (event) => selectVehicle(event.features[0].properties.vehicleId, null, true));
-      state.map.on("click", "stops", (event) => selectVehicle(event.features[0].properties.vehicleId, Number(event.features[0].properties.stopNo), false));
-      state.map.on("click", "stop-points", (event) => selectVehicle(event.features[0].properties.vehicleId, Number(event.features[0].properties.stopNo), false));
-      state.map.on("click", "dropoffs", (event) => selectVehicle(event.features[0].properties.vehicleId, Number(event.features[0].properties.stopNo), false));
-      ["routes", "route-selected", "route-next", "route-done"].forEach((layer) => state.map.on("click", layer, (event) => selectVehicle(event.features[0].properties.vehicleId || state.selectedVehicleId, null, true)));
+      state.map.on("click", "vehicles", (event) => {
+        const destinationFeature = destinationFeatureAtEvent(event);
+        if (destinationFeature && selectDestinationFeature(destinationFeature, event)) return;
+        selectVehicle(event.features[0].properties.vehicleId, null, true);
+      });
+      state.map.on("click", "stops", (event) => selectDestinationFeature(event.features[0], event));
+      state.map.on("click", "stop-points", (event) => selectDestinationFeature(event.features[0], event));
+      state.map.on("click", "dropoffs", (event) => selectDestinationFeature(event.features[0], event));
+      ["routes", "route-selected", "route-next", "route-done"].forEach((layer) => state.map.on("click", layer, (event) => {
+        if (performance.now() < (state.destinationClickLockUntil || 0)) return;
+        selectVehicle(event.features[0].properties.vehicleId || state.selectedVehicleId, null, true);
+      }));
       applyDestinationDisplayMode();
       installSpotlightClearHandlers();
     }
