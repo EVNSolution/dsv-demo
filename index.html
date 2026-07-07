@@ -1906,7 +1906,7 @@
         routeNext: nextRoute.length > 1 ? routeFeature(nextRoute, { vehicleId: selected.id }) : fc([]),
         stops: fc(vehicles.flatMap((vehicle) => vehicle.stops.map((stop) => pointFeature(stop.coord, {
           vehicleId: vehicle.id, stopNo: stop.no, label: String(stop.no), pinImage: stopPinImage(vehicle, stop, selected), selected: !!selected && vehicle.id === selected.id, active: !!selected && vehicle.id === selected.id && stop.no === state.selectedStopNo,
-          done: stop.no <= vehicle.done, risk: stop.no === riskStopNo(vehicle)
+          done: stop.no <= vehicle.done, risk: stop.no === riskStopNo(vehicle), mutedDestination: !!selected && vehicle.id !== selected.id
         })))),
         dropoffs: fc(vehicles.flatMap((vehicle) => dropoffsOf(vehicle).flatMap((coord, i) => {
           if (i + 1 <= vehicle.done) return [];
@@ -1925,6 +1925,7 @@
       };
     }
     function stopPinImage(vehicle, stop, selected) {
+      if (selected && vehicle.id !== selected.id) return "stop-pin-muted";
       if (stop.no === riskStopNo(vehicle)) return "stop-pin-risk";
       if (stop.no <= vehicle.done) return "stop-pin-done";
       return selected && vehicle.id === selected.id ? "stop-pin-selected" : "stop-pin-default";
@@ -1954,6 +1955,7 @@
       const images = [
         ["stop-pin-default", "#303030"],
         ["stop-pin-selected", "#1f8b4c"],
+        ["stop-pin-muted", VEHICLE_MARKER_DEFAULT],
         ["stop-pin-done", "#8e8e93"],
         ["stop-pin-risk", "#d92d20"]
       ];
@@ -2189,7 +2191,7 @@
       state.map.addLayer({ id: "origin-label", type: "symbol", source: "origin", layout: { "text-field": "상차", "text-font": MAP_TEXT_FONT, "text-size": 12, "text-offset": [0, -1.8] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
       state.map.addLayer({ id: "dropoffs", type: "circle", source: "dropoffs", minzoom: 15.5, paint: { "circle-radius": ["case", ["get", "active"], 5, ["get", "selected"], 4, 2.8], "circle-color": "#f79009", "circle-stroke-color": "#1d1d1f", "circle-stroke-width": 1.5 } });
       state.map.addLayer({ id: "dropoff-labels", type: "symbol", source: "dropoffs", minzoom: 15.5, layout: { "text-field": "정차", "text-font": MAP_TEXT_FONT, "text-size": 9, "text-offset": [0, -1.15] }, paint: { "text-color": "#9a5a00", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
-      state.map.addLayer({ id: "stop-points", type: "circle", source: "stops", layout: { "visibility": destinationLayerVisibility("point") }, paint: { "circle-radius": ["case", ["get", "active"], 7, ["get", "selected"], 6, ["get", "done"], 4.6, 5.2], "circle-color": ["case", ["get", "risk"], "#d92d20", ["get", "active"], "#1f8b4c", ["get", "selected"], "#1f8b4c", ["get", "done"], "#8e8e93", "#1d1d1f"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+      state.map.addLayer({ id: "stop-points", type: "circle", source: "stops", layout: { "visibility": destinationLayerVisibility("point") }, paint: { "circle-radius": ["case", ["get", "active"], 7, ["get", "selected"], 6, ["get", "done"], 4.6, 5.2], "circle-color": ["case", ["get", "mutedDestination"], VEHICLE_MARKER_DEFAULT, ["get", "risk"], "#d92d20", ["get", "active"], "#1f8b4c", ["get", "selected"], "#1f8b4c", ["get", "done"], "#8e8e93", "#1d1d1f"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
       state.map.addLayer({ id: "stop-point-labels", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("point"), "symbol-sort-key": ["case", ["get", "active"], 4000, ["get", "selected"], 3000, ["get", "done"], 1000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 10 }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.35)", "text-halo-width": .6 } });
       state.map.addLayer({ id: "stops", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("marker"), "icon-allow-overlap": true, "icon-anchor": "bottom", "icon-ignore-placement": true, "icon-image": ["get", "pinImage"], "icon-size": STOP_PIN_ICON_SIZE, "symbol-sort-key": ["case", ["get", "active"], 4000, ["get", "selected"], 3000, ["get", "done"], 1000, 2000] } });
       state.map.addLayer({ id: "stop-labels", type: "symbol", source: "stops", layout: { "visibility": destinationLayerVisibility("marker"), "symbol-sort-key": ["case", ["get", "active"], 4000, ["get", "selected"], 3000, ["get", "done"], 1000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 11, "text-offset": [0, -1.85] }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.28)", "text-halo-width": .7 } });
