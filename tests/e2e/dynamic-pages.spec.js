@@ -211,8 +211,10 @@ test.describe('customer delivery inquiry demo', () => {
     await expect(card).toContainText('냉장 항생제');
     await expect(card).toContainText('온도기록계 동봉');
     await expect(card).toContainText('검체 운송 튜브');
-    await expect(card.locator('.customer-status-item').first()).toContainText(/도착 예정/);
-    await expect(card.locator('.customer-status-item').nth(1)).toContainText(/정차·하차 예상/);
+    await expect(card.locator('.customer-status-item').first()).toContainText(/남은 시간/);
+    await expect(card.locator('#customerRemainingText')).toContainText(/도착|대기/);
+    await expect(card.locator('.customer-status-item').nth(1)).toContainText(/도착 예정/);
+    await expect(card.locator('.customer-status-item').nth(2)).toContainText(/정차·하차 예상/);
   });
 
   test('customer projection exposes one vehicle, one destination, and no admin stops', async ({ page }) => {
@@ -230,13 +232,14 @@ test.describe('customer delivery inquiry demo', () => {
     expect(snapshot.sourceCounts.destinations).toBe(1);
     expect(snapshot.sourceCounts.adminStops).toBe(0);
     expect(snapshot.sourceCounts.vehicles).not.toBe(13);
+    expect(snapshot.remainingText).toMatch(/도착|대기/);
   });
 
-  test('vehicle target opens customer route state without admin panels', async ({ page }) => {
+  test('customer route is visible by default without vehicle click', async ({ page }) => {
     await openCustomer(page);
-    await page.locator('[data-customer-route]').click();
     await expect.poll(() => page.evaluate(() => window.dsvDemo.customerSnapshot().customerRouteVisible)).toBe(true);
     await expect(page.locator('#customerOrderCard')).toContainText('배송 경로 표시 중');
+    await expect(page.locator('#customerOrderCard')).not.toContainText('차량 클릭 시 경로 표시');
     await expect(page.locator('#floatingDriverCard')).toBeHidden();
     await expect(page.locator('.side')).toBeHidden();
     const snapshot = await page.evaluate(() => window.dsvDemo.customerSnapshot());

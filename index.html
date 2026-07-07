@@ -476,8 +476,10 @@
     .customer-order-head small { display:block; margin-top:4px; color:var(--muted); font-size:12px; font-weight:900; }
     .customer-status-grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
     .customer-status-item { padding:11px 12px; border:1px solid var(--hairline); border-radius:17px; background:#fff; }
+    .customer-status-item.remaining { grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--blue-soft); border-color:rgba(0,102,204,.14); }
     .customer-status-item span { display:block; color:var(--muted); font-size:11px; font-weight:900; letter-spacing:-.02em; }
     .customer-status-item b { display:block; margin-top:4px; color:var(--ink); font-size:15px; font-weight:1000; letter-spacing:-.035em; }
+    .customer-status-item.remaining b { margin-top:0; color:var(--blue); font-size:16px; }
     .customer-destination { padding:13px; border-radius:19px; background:var(--blue-soft); border:1px solid rgba(0,102,204,.12); }
     .customer-destination strong { display:block; font-size:16px; font-weight:1000; letter-spacing:-.04em; }
     .customer-destination span { display:block; margin-top:4px; color:var(--muted); font-size:12px; font-weight:850; line-height:1.35; }
@@ -727,7 +729,7 @@
       stops: ROUTE_TEMPLATES[vehicle.route].map(([name, coord], i) => ({ no: i + 1, name, coord }))
     }));
 
-    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, lastTrackingAt: 0, lastTrackingSampleAt: 0, programmaticCameraUntil: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, riskDismissedUntil: 0, notifications: [], notificationOpen: false, notificationRingTimer: 0, destinationAnimationTimer: 0, temperatureTimelineUserUntil: 0, pendingTemperatureTimelineSignature: "", speedLevel: 5, dwellMinutes: 5, viewMode: "2d", destinationDisplayMode: "marker", activeTab: CUSTOMER_DELIVERY_MODE ? "customer" : "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, driverProfileVisible: false, spotlightVehicleId: "", workAction: "", uploadPreview: false, selectedRecordIndex: 0, selectedCourierId: "c01", trackingVehicleId: "", riskVehicleId: "unload04", map: null, selectedVehicleId: CUSTOMER_DELIVERY_MODE ? CUSTOMER_DELIVERY_DEMO.vehicleId : "depart01", selectedStopNo: CUSTOMER_DELIVERY_MODE ? CUSTOMER_DELIVERY_DEMO.stopNo : 1, customerRouteVisible: false, customerRouteRequestedAt: 0, routes: {}, dropoffs: {}, routeLegs: {}, lastMapData: null, lastCustomerMapData: null };
+    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, lastTrackingAt: 0, lastTrackingSampleAt: 0, programmaticCameraUntil: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, riskDismissedUntil: 0, notifications: [], notificationOpen: false, notificationRingTimer: 0, destinationAnimationTimer: 0, temperatureTimelineUserUntil: 0, pendingTemperatureTimelineSignature: "", speedLevel: 5, dwellMinutes: 5, viewMode: "2d", destinationDisplayMode: "marker", activeTab: CUSTOMER_DELIVERY_MODE ? "customer" : "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, driverProfileVisible: false, spotlightVehicleId: "", workAction: "", uploadPreview: false, selectedRecordIndex: 0, selectedCourierId: "c01", trackingVehicleId: "", riskVehicleId: "unload04", map: null, selectedVehicleId: CUSTOMER_DELIVERY_MODE ? CUSTOMER_DELIVERY_DEMO.vehicleId : "depart01", selectedStopNo: CUSTOMER_DELIVERY_MODE ? CUSTOMER_DELIVERY_DEMO.stopNo : 1, customerRouteVisible: CUSTOMER_DELIVERY_MODE, customerRouteRequestedAt: 0, routes: {}, dropoffs: {}, routeLegs: {}, lastMapData: null, lastCustomerMapData: null };
     const demoLogs = [];
     const routeCache = new Map();
     window.demoLogs = demoLogs;
@@ -1501,6 +1503,15 @@
       const etaMs = customerArrivalEtaMs(vehicle);
       return etaMs ? timeLabel(etaMs) : "대기";
     }
+    function customerRemainingText(vehicle = customerVehicle()) {
+      if (vehicle.completed || vehicle.done >= CUSTOMER_DELIVERY_DEMO.stopNo) return "도착 완료";
+      const etaMs = customerArrivalEtaMs(vehicle);
+      if (!etaMs) return "도착 대기";
+      const totalSeconds = Math.max(0, Math.ceil((etaMs - simulatedNowMs()) / 1000));
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return minutes ? `${minutes}분 ${String(seconds).padStart(2, "0")}초 뒤 도착` : `${seconds}초 뒤 도착`;
+    }
     function customerDwellWindowText(vehicle = customerVehicle()) {
       if (vehicle.completed || vehicle.done >= CUSTOMER_DELIVERY_DEMO.stopNo) return "하차 완료";
       const etaMs = customerArrivalEtaMs(vehicle);
@@ -1578,7 +1589,8 @@
           adminStops: (data.stops.features || []).filter((feature) => feature.properties?.customerVisible !== true).length
         },
         adminChromeVisible,
-        customerRouteVisible: !!state.customerRouteVisible
+        customerRouteVisible: !!state.customerRouteVisible,
+        remainingText: customerRemainingText()
       };
     }
     function renderCustomerOrderCard() {
@@ -1587,6 +1599,7 @@
       const vehicle = customerVehicle();
       const status = customerStatusText(vehicle);
       const eta = customerEtaText(vehicle);
+      const remaining = customerRemainingText(vehicle);
       const dwell = customerDwellWindowText(vehicle);
       card.hidden = false;
       card.innerHTML = `
@@ -1596,14 +1609,15 @@
         </div>
         <div class="customer-destination"><strong>${safeText(CUSTOMER_DELIVERY_DEMO.destinationName)}</strong><span>${safeText(CUSTOMER_DELIVERY_DEMO.destinationAddress)}</span></div>
         <div class="customer-status-grid">
+          <div class="customer-status-item remaining"><span>남은 시간</span><b id="customerRemainingText">${safeText(remaining)}</b></div>
           <div class="customer-status-item"><span>도착 예정</span><b id="customerEtaText">${safeText(eta)}</b></div>
           <div class="customer-status-item"><span>정차·하차 예상</span><b id="customerDwellText">${safeText(dwell)}</b></div>
         </div>
-        <button class="customer-vehicle-target" type="button" data-customer-route="true"><strong>${safeText(vehicle.plate)}</strong><span>${state.customerRouteVisible ? "배송 경로 표시 중" : "차량 클릭 시 경로 표시"}</span></button>
+        <button class="customer-vehicle-target" type="button" data-customer-route="true"><strong>${safeText(vehicle.plate)}</strong><span>배송 경로 표시 중</span></button>
         <div class="customer-cargo"><div class="customer-cargo-title">배송 품목</div>
           ${CUSTOMER_DELIVERY_DEMO.cargo.map((item) => `<div class="customer-cargo-row"><span>${safeText(item.name)}</span><b>${safeText(item.qty)}</b></div>`).join("")}
         </div>
-        <p class="customer-hint">현재 차량 위치와 고객 배송지까지의 경로만 표시합니다.</p>`;
+        <p class="customer-hint">현재 차량 위치에서 고객 배송지까지의 경로가 바로 표시됩니다.</p>`;
       card.querySelector("[data-customer-route]")?.addEventListener("click", () => showCustomerRouteToDestination("customer-card"));
     }
     function renderCustomerMode() {
@@ -1645,6 +1659,7 @@
       state.spotlightVehicleId = "";
       state.trackingVehicleId = "";
       state.driverProfileVisible = false;
+      state.customerRouteVisible = true;
       document.body.classList.add("customer-delivery-demo");
       renderCustomerMode();
     }
@@ -3084,7 +3099,7 @@
     function reset() {
       clearInterval(state.timer); state.timer = null; state.running = false; state.forcedRisk = false; state.forcedRiskStartedAt = 0; state.riskDismissedUntil = 0; state.notifications = []; state.notificationOpen = false; state.batchNo = 0; state.lastSampleAt = 0; $("startBtn").classList.add("primary"); $("startBtn").classList.remove("danger"); $("startBtn").textContent = "Start Simulation"; $("startBtn").disabled = false;
       state.destinationCollapsed = false;
-      state.customerRouteVisible = false;
+      state.customerRouteVisible = CUSTOMER_DELIVERY_MODE;
       applyAllScenarios(Date.now(), true);
       if (CUSTOMER_DELIVERY_MODE) {
         state.selectedVehicleId = CUSTOMER_DELIVERY_DEMO.vehicleId;
