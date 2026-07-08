@@ -132,6 +132,16 @@ test.describe('fleet ordering', () => {
     await expect(page.locator('#floatingDriverCard')).toBeVisible();
     await expect(page.locator('#fleetList [data-vehicle="depart01"]')).toHaveClass(/active/);
   });
+
+
+  test('completed deliveries show completion time', async ({ page }) => {
+    await page.goto(`/?completed-time=${Date.now()}`, { waitUntil: 'domcontentloaded' });
+    const row = page.locator('#fleetList [data-vehicle="complete12"]');
+    await expect(row).toBeVisible();
+    await expect(row).toContainText(/완료\s+(오전|오후)\s*\d{1,2}:\d{2}/);
+    await row.click();
+    await expect(page.locator('#destinationList [data-stop="12"]')).toContainText(/완료\s+(오전|오후)\s*\d{1,2}:\d{2}/);
+  });
 });
 
 test.describe('map debug helpers', () => {
@@ -191,12 +201,14 @@ test.describe('customer delivery inquiry demo', () => {
     await expect(page.getByRole('heading', { name: 'Clever - 고객사 Demo' })).toBeVisible();
   }
 
-  test('customer-inquiry shows customer-wide order list', async ({ page }) => {
+  test('customer-inquiry shows customer-wide order list below selected order title', async ({ page }) => {
     await openCustomerInquiry(page);
     const card = page.locator('#customerOrderCard');
-    await expect(card).toContainText('주문 목록');
-    await expect(card).toContainText('DSV-20260708-1001');
-    await expect(card).toContainText('DSV-20260708-1002');
+    await expect(card.locator('.customer-order-head').first()).toContainText('메디팜코리아 수도권 냉장출고');
+    await expect(card.locator('.customer-order-head').first()).not.toContainText('DSV-20260708-1001');
+    await expect(card).not.toContainText('주문 목록');
+    await expect(card.locator('[data-order-no="DSV-20260708-1001"]')).toBeVisible();
+    await expect(card.locator('[data-order-no="DSV-20260708-1002"]')).toBeVisible();
     const snapshot = await page.evaluate(() => window.dsvDemo.customerSnapshot());
     expect(snapshot.mode).toBe('customer-inquiry');
     expect(snapshot.orderNos).toEqual(['DSV-20260708-1001', 'DSV-20260708-1002']);
@@ -205,14 +217,51 @@ test.describe('customer delivery inquiry demo', () => {
   test('customer-inquiry defaults to multi-vehicle order detail', async ({ page }) => {
     await openCustomerInquiry(page);
     const card = page.locator('#customerOrderCard');
-    await expect(card).toContainText('응급 백신');
     await expect(card).toContainText('23바 6303');
-    await expect(card).toContainText('24사 6404');
+    await expect(card).toContainText('33사 7311');
+    await expect(card).toContainText('차량 목록');
+    await expect(card.locator('.customer-route-group.active')).toContainText('23바 6303');
+    await expect(card.locator('.customer-route-group').first()).not.toContainText('장지역메디컬센터');
+    await expect(card.locator('.customer-destination-row')).toHaveCount(3);
+    await expect(card.locator('.customer-destination-row.active')).toContainText('장지역메디컬센터');
     const snapshot = await page.evaluate(() => window.dsvDemo.customerSnapshot());
     expect(snapshot.orderNo).toBe('DSV-20260708-1001');
-    expect(snapshot.vehicleIds.sort()).toEqual(['final12', 'to10']);
+    expect(snapshot.selectedCustomerVehicleId).toBe('to10');
+    expect(snapshot.vehicleIds.sort()).toEqual(['proof11', 'to10']);
     expect(snapshot.sourceCounts.vehicles).toBe(2);
-    expect(snapshot.sourceCounts.destinations).toBe(2);
+    expect(snapshot.sourceCounts.destinations).toBe(5);
+    expect(snapshot.vehicleStopCounts).toEqual({ to10: 3, proof11: 2 });
+    await expect.poll(() => page.evaluate(() => window.dsvDemo.customerSnapshot().sourceCounts.routes), { timeout: 15_000 }).toBe(2);
+  });
+
+  test('customer-inquiry switches vehicle before showing that vehicle destinations', async ({ page }) => {
+    await openCustomerInquiry(page);
+    const card = page.locator('#customerOrderCard');
+    await card.locator('[data-customer-route="proof11"]').click();
+    await expect(card.locator('.customer-route-group.active')).toContainText('33사 7311');
+    await expect(card.locator('.customer-destination-row')).toHaveCount(2);
+    await expect(card.locator('.customer-destination-row.active')).toContainText('경복궁의학센터');
+    await expect(card.locator('.customer-destination-row').first()).toContainText('1');
+    await expect(card).toContainText('응급 백신');
+    await expect(card).not.toContainText('항암 주사제');
+    const snapshot = await page.evaluate(() => window.dsvDemo.customerSnapshot());
+    expect(snapshot.selectedCustomerVehicleId).toBe('proof11');
+    expect(snapshot.visibleDestinationLabels).toEqual(['1', '2']);
+  });
+
+  test('customer-inquiry panel uses list rows inside viewport height', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 600 });
+    await openCustomerInquiry(page);
+    const card = page.locator('#customerOrderCard');
+    await expect(card.locator('.customer-destination-row')).toHaveCount(3);
+    await expect(card.locator('.customer-route-group')).toHaveCount(2);
+    const metrics = await card.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      return { height: rect.height, overflowY: style.overflowY, viewport: innerHeight };
+    });
+    expect(metrics.height).toBeLessThanOrEqual(metrics.viewport - 32);
+    expect(metrics.overflowY).toBe('auto');
   });
 
   test('customer-inquiry switches selected order detail', async ({ page }) => {
@@ -220,12 +269,46 @@ test.describe('customer delivery inquiry demo', () => {
     const card = page.locator('#customerOrderCard');
     await card.locator('[data-order-no="DSV-20260708-1002"]').click();
     await expect(card).toContainText('혈액 검체');
-    await expect(card).toContainText('서울아산병원');
+    await expect(card).toContainText('광교중앙메디컬센터');
     await expect(card).not.toContainText('응급 백신');
     const snapshot = await page.evaluate(() => window.dsvDemo.customerSnapshot());
     expect(snapshot.orderNo).toBe('DSV-20260708-1002');
-    expect(snapshot.vehicleIds).toEqual(['to10']);
-    expect(snapshot.destinationLabels).toEqual(['1']);
+    expect(snapshot.vehicleIds).toEqual(['delay07']);
+    expect(snapshot.destinationLabels).toEqual(['1', '2', '3']);
+    expect(snapshot.visibleDestinationLabels).toEqual(['1', '2', '3']);
+    expect(snapshot.vehicleStopCounts).toEqual({ delay07: 3 });
+    await expect.poll(() => page.evaluate(() => window.dsvDemo.customerSnapshot().sourceCounts.routes), { timeout: 15_000 }).toBe(1);
+  });
+
+  test('customer-inquiry order click fits the selected order on map', async ({ page }) => {
+    await openCustomerInquiry(page);
+    await page.waitForFunction(() => window.dsvMap && typeof window.dsvMap.fitBounds === 'function');
+    await page.evaluate(() => {
+      const original = window.dsvMap.fitBounds.bind(window.dsvMap);
+      window.__lastCustomerFitBoundsOptions = null;
+      window.dsvMap.fitBounds = (bounds, options) => {
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+        window.__lastCustomerFitBoundsOptions = { ...options, bounds: { west: sw.lng, south: sw.lat, east: ne.lng, north: ne.lat } };
+        return original(bounds, { ...options, duration: 0 });
+      };
+    });
+    const beforeLat = await page.evaluate(() => window.dsvMap.getCenter().lat);
+    await page.locator('#customerOrderCard [data-order-no="DSV-20260708-1002"]').click();
+    await page.waitForFunction(() => window.dsvMap.getCenter().lat < 37.38);
+    const afterLat = await page.evaluate(() => window.dsvMap.getCenter().lat);
+    const padding = await page.evaluate(() => {
+      const card = document.querySelector('#customerOrderCard').getBoundingClientRect();
+      const map = window.dsvMap.getContainer().getBoundingClientRect();
+      return {
+        actual: window.__lastCustomerFitBoundsOptions,
+        requiredRight: Math.ceil(map.right - card.left + 24)
+      };
+    });
+    expect(afterLat).toBeLessThan(beforeLat - 0.03);
+    expect(padding.actual.padding.right).toBeGreaterThanOrEqual(padding.requiredRight - 1);
+    expect(padding.actual.maxZoom).toBeLessThanOrEqual(13.8);
+    expect(padding.actual.bounds.east - padding.actual.bounds.west).toBeGreaterThan(0.055);
   });
 
   test('customer-inquiry never renders other customer cargo', async ({ page }) => {
@@ -234,10 +317,11 @@ test.describe('customer delivery inquiry demo', () => {
     await expect(page.locator('#customerOrderCard')).not.toContainText('99박스');
   });
 
-  test('customer-inquiry destination labels are customer sequence 1..N', async ({ page }) => {
+  test('customer-inquiry destination labels restart by vehicle', async ({ page }) => {
     await openCustomerInquiry(page);
     const snapshot = await page.evaluate(() => window.dsvDemo.customerSnapshot());
-    expect(snapshot.destinationLabels).toEqual(['1', '2']);
+    expect(snapshot.destinationLabels).toEqual(['1', '2', '3', '1', '2']);
+    expect(snapshot.visibleDestinationLabels).toEqual(['1', '2', '3']);
     expect(snapshot.sourceCounts.adminStops).toBe(0);
   });
 
@@ -263,7 +347,8 @@ test.describe('customer delivery inquiry demo', () => {
     await expect(card).toContainText('DSV-20260707-0042');
     await expect(card).toContainText('삼성서울병원 약제팀');
     await expect(card).toContainText('삼성서울병원');
-    await expect(card).toContainText('서울 강남구 일원로 81');
+    await expect(card.locator('.customer-row-meta').first()).toContainText(/도착 예정\s+(오전|오후)\s*\d{1,2}:\d{2}/);
+    await expect(card.locator('.customer-row-meta').first()).not.toContainText(/23바 6303|서울 강남구|·/);
     await expect(card).toContainText('임상시험 검체');
     await expect(card).toContainText('냉장 항생제');
     await expect(card).toContainText('온도기록계 동봉');

@@ -18,6 +18,8 @@
       --green: #1f8b4c;
       --green-soft: #e9f7ef;
       --future: #d1d5db;
+      --done: #8e8e93;
+      --done-soft: #f2f2f7;
       --risk: #d92d20;
       --risk-soft: #fff0ed;
       --amber: #f79009;
@@ -92,6 +94,7 @@
     .chip { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--canvas); color: var(--muted); white-space: nowrap; }
     .chip.blue { color: var(--blue); background: var(--blue-soft); }
     .chip.green { color: var(--green); background: var(--green-soft); }
+    .chip.gray { color: var(--done); background: var(--done-soft); }
     .chip.risk { color: var(--risk); background: var(--risk-soft); }
     .chip.amber { color: #9a5a00; background: var(--amber-soft); }
     .chip.mini { min-height: 24px; font-size: 11px; color: #3a3a3c; background: #f2f2f7; }
@@ -181,7 +184,7 @@
     .log-row.planned i { background: #f2f2f7; color: #6e6e73; }
     .log-row.warn i { background: var(--amber-soft); color: #9a5a00; }
     .log-row.risk i { background: var(--risk-soft); color: var(--risk); }
-    .log-row.resolved i, .note-row.done i { background: var(--green-soft); color: var(--green); }
+    .log-row.resolved i, .note-row.done i { background: var(--done-soft); color: var(--done); }
     .note-row.warn i { background: var(--amber-soft); color: #9a5a00; }
     .note-section-title { margin-top: 3px; color: var(--muted); font-size: 11px; font-weight: 1000; letter-spacing: -.02em; }
     .cargo-note-list .note-row { grid-template-columns: auto 1fr auto; align-items: center; }
@@ -285,9 +288,9 @@
     .work-courier-button.active { border-color:#000; box-shadow:0 0 0 1px #000 inset; background:#f7f7f9; }
     .work-courier-button strong { display:block; color:var(--ink); font-size:13px; letter-spacing:-.03em; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
     .work-courier-button small { display:block; margin-top:2px; color:var(--muted); font-size:11px; font-weight:800; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-    .work-timeline-row i { width:28px; height:28px; border-radius:999px; display:grid; place-items:center; font-style:normal; font-size:12px; font-weight:1000; background:var(--future); color:#fff; }
-    .work-timeline-row.done i { background:var(--green); }
-    .work-timeline-row.now i { background:var(--blue); }
+    .work-timeline-row i { width:28px; height:28px; border-radius:999px; display:grid; place-items:center; font-style:normal; font-size:12px; font-weight:1000; background:var(--blue); color:#fff; }
+    .work-timeline-row.done i { background:var(--done); }
+    .work-timeline-row.now i { background:var(--green); }
     .work-live-head { display:grid; grid-template-columns:1fr auto; align-items:center; gap:8px; }
     .work-live-head .tab-line { min-width:0; }
     .work-live-head .tab-line span:first-child { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
@@ -295,8 +298,8 @@
     .work-live-actions .btn { min-height:30px; padding:0 10px; font-size:12px; font-weight:900; }
     .work-timeline-list { min-height:0; overflow:auto; display:grid; align-content:start; gap:8px; padding-right:4px; }
     .work-timeline-row { display:grid; grid-template-columns:34px 1fr auto; gap:9px; align-items:center; padding:9px 10px; border:1px solid var(--hairline); border-radius:16px; background:#fff; }
-    .work-timeline-row.done { background:rgba(233,247,239,.72); }
-    .work-timeline-row.now { background:rgba(232,242,255,.82); border-color:rgba(0,102,204,.28); }
+    .work-timeline-row.done { background:var(--done-soft); }
+    .work-timeline-row.now { background:var(--green-soft); border-color:rgba(31,139,76,.28); }
     .work-timeline-row strong { display:block; font-size:13px; letter-spacing:-.03em; }
     .work-timeline-row small { display:block; margin-top:2px; color:var(--muted); font-size:11px; font-weight:800; }
     .work-order-detail { min-height:0; overflow:auto; display:grid; align-content:start; gap:12px; padding-right:4px; }
@@ -317,26 +320,27 @@
     .proof-image-head { min-height:38px; padding:0 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; font-weight:1000; letter-spacing:-.03em; background:#f7f8fa; border-bottom:0; }
     .proof-image-card[open] .proof-image-head { border-bottom:1px solid var(--hairline); }
     .proof-image-box { height:112px; margin:10px; border:1px dashed #c7c7cc; border-radius:14px; background:linear-gradient(135deg,#f8fafc 0%,#eef2f7 100%); display:grid; place-items:center; color:var(--muted); font-size:12px; font-weight:900; text-align:center; }
-    .proof-image-card.done .proof-image-box { border-style:solid; border-color:rgba(31,139,76,.22); background:linear-gradient(135deg,#f6fff9 0%,#e9f7ef 100%); color:var(--green); }
+    .proof-image-card.done .proof-image-box { border-style:solid; border-color:rgba(142,142,147,.22); background:linear-gradient(135deg,#fafafa 0%,#f2f2f7 100%); color:var(--done); }
 
     .fleet, .stops { display: grid; gap: 8px; margin-top: 12px; min-height: 0; }
     #fleetList, #destinationList { flex: 1 1 auto; max-height: none; overflow-y: auto; padding-right: 4px; overscroll-behavior: contain; }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 17px; border: 1px solid var(--hairline); background: #fff; cursor: pointer; }
     .row.active { border-width: 3px; padding: 7px 8px; border-color: #000; background: var(--blue-soft); box-shadow: 0 0 0 1px rgba(255,255,255,.78) inset; }
-    .row.status-loading { background: #fff; }
-    .row.status-moving { background: rgba(233,247,239,.78); }
-    .row.status-dwell, .row.status-completed { background: rgba(232,242,255,.74); }
-    .row.active.status-moving { background: var(--green-soft); }
-    .row.active.status-dwell, .row.active.status-completed { background: var(--blue-soft); }
+    .row.status-loading { background: var(--blue-soft); }
+    .row.status-moving, .row.status-dwell { background: rgba(233,247,239,.78); }
+    .row.status-completed { background: var(--done-soft); }
+    .row.active.status-loading { background: var(--blue-soft); }
+    .row.active.status-moving, .row.active.status-dwell { background: var(--green-soft); }
+    .row.active.status-completed { background: var(--done-soft); }
     .row.risk { border-color: rgba(217,45,32,.32); background: var(--risk-soft); }
     .row.active.risk { border-color: #000; }
     .row .chip { min-height: 24px; padding: 0 9px; font-size: 11px; }
     .plate { width: 54px; height: 42px; border-radius: 13px; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 800; line-height: 1.05; }
     .vehicle-line { display: inline-flex; align-items: center; gap: 6px; font-weight: 900; letter-spacing: -.03em; }
     .status-pill { min-height: 19px; padding: 0 7px; border-radius: 999px; display: inline-flex; align-items: center; border: 1px solid var(--hairline); background: #fff; color: var(--muted); font-size: 10px; font-weight: 1000; letter-spacing: -.03em; }
-    .status-pill.moving { border-color: transparent; background: var(--green); color: #fff; }
-    .status-pill.dwell, .status-pill.completed { border-color: transparent; background: var(--blue); color: #fff; }
-    .status-pill.loading { border-color: #d1d5db; background: #fff; color: #3a3a3c; }
+    .status-pill.moving, .status-pill.dwell { border-color: transparent; background: var(--green); color: #fff; }
+    .status-pill.loading { border-color: transparent; background: var(--blue); color: #fff; }
+    .status-pill.completed { border-color: transparent; background: var(--done); color: #fff; }
     .alert-dot { width: 18px; height: 18px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--risk); color: #fff; font-size: 12px; font-weight: 1000; line-height: 1; box-shadow: 0 0 0 3px var(--risk-soft); }
     .row-title { font-weight: 800; letter-spacing: -.02em; }
     .row-meta { color: var(--muted); font-size: 11px; margin-top: 0; }
@@ -429,13 +433,13 @@
 
     .timeline { display:grid; gap: 10px; margin-top: 14px; }
     .t { display:grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items:center; color: var(--muted); font-size: 12px; }
-    .t i { width: 22px; height: 22px; border-radius: 999px; background: var(--future); color:#fff; display:grid; place-items:center; font-style:normal; font-size:11px; font-weight:800; }
-    .t.done i { background: var(--green); }
+    .t i { width: 22px; height: 22px; border-radius: 999px; background: var(--blue); color:#fff; display:grid; place-items:center; font-style:normal; font-size:11px; font-weight:800; }
+    .t.done i { background: var(--done); }
     .t.now { color: var(--ink); font-weight: 800; }
-    .t.now i { background: var(--blue); }
+    .t.now i { background: var(--green); }
     .t.risk i { background: var(--risk); }
     .t[data-stop] { cursor: pointer; padding: 4px 6px; border-radius: 12px; }
-    .t[data-stop].active { background: var(--blue-soft); color: var(--ink); font-weight: 800; }
+    .t[data-stop].active { background: var(--green-soft); color: var(--ink); font-weight: 800; }
     .collapse-btn { justify-self: end; margin-top: 12px; border: 0; background: transparent; color: var(--muted); font-weight: 900; cursor: pointer; }
     #destinationCard { transition: padding .26s cubic-bezier(.2, .8, .2, 1); }
     #destinationCard.is-animating, #destinationCard.collapsed { overflow: hidden; }
@@ -465,34 +469,63 @@
     body.customer-delivery-demo .grid { grid-template-columns: 1fr; }
     .customer-order-card {
       position: absolute; right: 22px; top: 22px; z-index: 7;
-      width: min(410px, calc(100vw - 44px)); padding: 20px;
+      width: min(470px, calc(100vw - 44px)); padding: 20px;
+      max-height: calc(100dvh - 44px); overflow-y: auto; overscroll-behavior: contain;
       display: grid; gap: 14px; background: rgba(255,255,255,.92);
       border: 1px solid rgba(255,255,255,.76); border-radius: 28px;
       box-shadow: var(--shadow); backdrop-filter: blur(18px);
     }
+    @supports not (height: 100dvh) { .customer-order-card { max-height: calc(100vh - 44px); } }
     .customer-order-card[hidden] { display: none !important; }
     .customer-order-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
     .customer-order-head strong { display:block; font-size:18px; font-weight:1000; letter-spacing:-.04em; }
     .customer-order-head small { display:block; margin-top:4px; color:var(--muted); font-size:12px; font-weight:900; }
     .customer-status-grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
     .customer-status-item { padding:11px 12px; border:1px solid var(--hairline); border-radius:17px; background:#fff; }
-    .customer-status-item.remaining { grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--blue-soft); border-color:rgba(0,102,204,.14); }
+    .customer-status-item.remaining { grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--green-soft); border-color:rgba(31,139,76,.14); }
     .customer-status-item span { display:block; color:var(--muted); font-size:11px; font-weight:900; letter-spacing:-.02em; }
     .customer-status-item b { display:block; margin-top:4px; color:var(--ink); font-size:15px; font-weight:1000; letter-spacing:-.035em; }
-    .customer-status-item.remaining b { margin-top:0; color:var(--blue); font-size:16px; }
+    .customer-status-item.remaining b { margin-top:0; color:var(--green); font-size:16px; }
     .customer-destination { padding:13px; border-radius:19px; background:var(--blue-soft); border:1px solid rgba(0,102,204,.12); }
     .customer-destination strong { display:block; font-size:16px; font-weight:1000; letter-spacing:-.04em; }
     .customer-destination span { display:block; margin-top:4px; color:var(--muted); font-size:12px; font-weight:850; line-height:1.35; }
+    .customer-section { display:grid; gap:8px; min-width:0; }
+    .customer-section-head { display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--muted); font-size:12px; font-weight:1000; letter-spacing:-.02em; }
+    .customer-list { display:grid; gap:7px; min-width:0; }
+    .customer-destination-row {
+      display:grid; grid-template-columns:28px minmax(0, 1fr) auto; gap:10px; align-items:center;
+      padding:9px 10px; border:1px solid var(--hairline); border-radius:15px; background:#fff;
+      color:var(--ink); text-align:left;
+    }
+    .customer-destination-row.active { border-color:rgba(31,139,76,.35); background:var(--green-soft); }
+    .customer-destination-row i {
+      width:24px; height:24px; border-radius:999px; display:grid; place-items:center;
+      background:var(--blue); color:#fff; font-style:normal; font-size:11px; font-weight:1000;
+    }
+    .customer-destination-row.status-green i { background:var(--green); }
+    .customer-destination-row.status-gray i { background:var(--done); }
+    .customer-destination-row strong { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:13px; font-weight:1000; letter-spacing:-.025em; }
+    .customer-destination-row small { display:block; margin-top:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:var(--muted); font-size:11px; font-weight:850; }
+    .customer-destination-row .chip { justify-self:end; }
     .customer-vehicle-target {
       width:100%; min-height:42px; border:1px solid var(--hairline); border-radius:999px;
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      display:grid; grid-template-columns:auto minmax(0, 1fr); align-items:center; gap:14px;
       padding:0 14px; background:#fff; color:var(--ink); cursor:pointer; font-weight:1000;
     }
-    .customer-vehicle-target span { color:var(--muted); font-size:12px; font-weight:900; }
+    .customer-vehicle-target strong { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .customer-vehicle-target span { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:var(--muted); font-size:12px; font-weight:900; text-align:right; }
     .customer-vehicle-target.active { border-color: rgba(0,102,204,.35); background: var(--blue-soft); }
+    .customer-route-group {
+      width:100%; border:1px solid var(--hairline); border-radius:17px; padding:10px; background:#fff;
+      display:grid; color:var(--ink); cursor:pointer; text-align:left;
+    }
+    .customer-route-group.active { border-color: rgba(31,139,76,.25); background: var(--green-soft); }
+    .customer-route-head { display:flex; align-items:center; justify-content:space-between; gap:10px; font-weight:1000; }
+    .customer-route-head span { color:var(--muted); font-size:12px; font-weight:900; white-space:nowrap; }
     .customer-cargo { display:grid; gap:7px; }
     .customer-cargo-title { color:var(--muted); font-size:12px; font-weight:1000; letter-spacing:-.02em; }
     .customer-cargo-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 11px; border:1px solid var(--hairline); border-radius:14px; background:#fff; font-size:13px; font-weight:900; }
+    .customer-cargo-row span { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
     .customer-cargo-row b { font-size:12px; font-weight:1000; color:var(--ink); white-space:nowrap; }
     .customer-hint { margin:0; color:var(--muted); font-size:12px; font-weight:850; line-height:1.42; }
 
@@ -615,7 +648,7 @@
     const VEHICLE_MARKER_PIXEL_RATIO = 2;
     const VEHICLE_MARKER_ICON_SIZE = 0.75;
     const VEHICLE_MARKER_DEFAULT = "#C3C6BF";
-    const VEHICLE_MARKER_SPOTLIGHT = "#DAFD54";
+    const VEHICLE_MARKER_SPOTLIGHT = "#1f8b4c";
     const DESTINATION_MARKER_BLUE = "#0066cc";
     const DESTINATION_MARKER_GREEN = "#1f8b4c";
     const DESTINATION_MARKER_MIN_ZOOM = 9.5;
@@ -723,19 +756,25 @@
     const CUSTOMER_DEFAULT_SHIPMENT = CUSTOMER_DELIVERY_DEMO.shipments[0];
     const CUSTOMER_INQUIRY_ORDERS = [
       {
-        orderNo: "DSV-20260708-1001", recipient: "삼성서울병원 약제팀",
+        orderNo: "DSV-20260708-1001", recipient: "메디팜코리아 수도권 냉장출고",
         destinationName: "삼성서울병원", destinationAddress: "서울 강남구 일원로 81", vehicleId: "to10", stopNo: 12,
         cargo: [
-          { name: "임상시험 검체", qty: "4박스", vehicleId: "to10", stopNo: 12 },
-          { name: "냉장 항생제", qty: "6EA", vehicleId: "to10", stopNo: 12 },
-          { name: "응급 백신", qty: "3박스", vehicleId: "final12", stopNo: 1, destinationName: "서울성모병원", destinationAddress: "서울 서초구 반포대로 222" }
+          { name: "항암 주사제", qty: "2박스", vehicleId: "to10", stopNo: 10, destinationName: "장지역메디컬센터", destinationAddress: "서울 송파구 송파대로 201" },
+          { name: "냉장 항생제", qty: "6EA", vehicleId: "to10", stopNo: 11, destinationName: "수서메디컬센터", destinationAddress: "서울 강남구 광평로 280" },
+          { name: "임상시험 검체", qty: "4박스", vehicleId: "to10", stopNo: 12, destinationName: "삼성서울병원", destinationAddress: "서울 강남구 일원로 81" },
+          { name: "응급 백신", qty: "3박스", vehicleId: "proof11", stopNo: 11, destinationName: "경복궁의학센터", destinationAddress: "서울 종로구 자하문로 28" },
+          { name: "온도기록계 동봉", qty: "2개", vehicleId: "proof11", stopNo: 12, destinationName: "안국메디컬센터", destinationAddress: "서울 종로구 율곡로 53" }
         ],
         otherCustomerCargo: [{ name: "타 고객 개인정보 검체", qty: "99박스", vehicleId: "depart01", stopNo: 1 }]
       },
       {
-        orderNo: "DSV-20260708-1002", recipient: "서울아산병원 진단검사의학팀",
-        destinationName: "서울아산병원", destinationAddress: "서울 송파구 올림픽로43길 88", vehicleId: "to10", stopNo: 6,
-        cargo: [{ name: "혈액 검체", qty: "2박스", vehicleId: "to10", stopNo: 6 }]
+        orderNo: "DSV-20260708-1002", recipient: "광교중앙메디컬센터 진단검사의학팀",
+        destinationName: "광교중앙메디컬센터", destinationAddress: "경기 수원시 영통구 광교중앙로 140", vehicleId: "delay07", stopNo: 9,
+        cargo: [
+          { name: "혈액 검체", qty: "2박스", vehicleId: "delay07", stopNo: 7, destinationName: "광교중앙메디컬센터", destinationAddress: "경기 수원시 영통구 광교중앙로 140" },
+          { name: "냉장 혈청 샘플", qty: "5EA", vehicleId: "delay07", stopNo: 8, destinationName: "수원시청검진센터", destinationAddress: "경기 수원시 팔달구 효원로 241" },
+          { name: "진단 키트", qty: "3박스", vehicleId: "delay07", stopNo: 9, destinationName: "수원역정형외과", destinationAddress: "경기 수원시 팔달구 덕영대로 924" }
+        ]
       }
     ];
     const vehicles = scenarioDefinitions.map((vehicle) => ({
@@ -873,9 +912,9 @@
     function etaChipClass(vehicle) {
       const status = vehicleStatus(vehicle).key;
       if (vehicle.risk) return "chip risk";
-      if (status === "moving") return "chip green";
-      if (status === "dwell" || status === "completed") return "chip blue";
-      return "chip";
+      if (status === "moving" || status === "dwell") return "chip green";
+      if (status === "completed") return "chip gray";
+      return "chip blue";
     }
     function selectedDriverCard(vehicle = spotlightVehicle()) {
       if (!vehicle) return "";
@@ -919,6 +958,20 @@
     function timeLabel(ms) {
       return new Date(ms).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
     }
+    function arrivalEventFor(vehicle, stopNo) {
+      return (vehicle.arrivalEvents || []).find((event) => Number(event.stopNo) === Number(stopNo));
+    }
+    function completedTimeText(vehicle, stopNo, label = "완료") {
+      const event = arrivalEventFor(vehicle, stopNo);
+      return event?.at ? `${label} ${timeLabel(event.at)}` : label;
+    }
+    function seedCompletedArrivalEvents(vehicle, baseMs, doneCount = vehicle.done) {
+      const count = Math.min(doneCount || 0, vehicle.stops.length);
+      const interval = Math.max(stopDwellMs(), 5 * 60 * 1000);
+      for (let i = 1; i <= count; i += 1) {
+        if (!arrivalEventFor(vehicle, i)) recordArrivalEvent(vehicle, baseMs - (count - i + 1) * interval, vehicle.stops[i - 1]);
+      }
+    }
     function recordArrivalEvent(vehicle, atMs, stop) {
       vehicle.arrivalEvents ||= [];
       if (!vehicle.arrivalEvents.some((event) => event.stopNo === stop.no)) {
@@ -954,7 +1007,7 @@
     }
     function latestTempStatus(vehicle) {
       if (vehicle.risk) return `<span class="chip risk">온도 상승</span>`;
-      if (vehicle.tempEvents?.[0]?.status === "resolved") return `<span class="chip green">해결됨</span>`;
+      if (vehicle.tempEvents?.[0]?.status === "resolved") return `<span class="chip gray">해결됨</span>`;
       return `<span class="chip mini">정상</span>`;
     }
     function uniqueArrivalEvents(events) {
@@ -1415,6 +1468,7 @@
         vehicle.done = vehicle.stops.length;
         vehicle.meters = meters.at(-1) || routeStats(routeOf(vehicle)).total;
         vehicle.completed = true;
+        seedCompletedArrivalEvents(vehicle, baseMs, vehicle.done);
         return;
       }
       if (vehicle.scenario === "unloading") {
@@ -1434,6 +1488,7 @@
       if (vehicle.scenario === "to-stop") {
         vehicle.done = target - 1;
         vehicle.meters = previousMeter + Math.max(0, Math.min(1, vehicle.progress || .5)) * Math.max(0, targetMeter - previousMeter);
+        seedCompletedArrivalEvents(vehicle, baseMs, vehicle.done);
       }
     }
     function applyAllScenarios(baseMs = Date.now(), clearLogs = false) {
@@ -1469,7 +1524,7 @@
     }
     function vehiclePosition(vehicle) { return pointAtMeters(routeOf(vehicle), vehicle.meters); }
     function etaText(vehicle) {
-      if (vehicle.completed) return "완료";
+      if (vehicle.completed) return completedTimeText(vehicle, vehicle.stops.length);
       if (timeScale() <= 0) return "정지";
       const departureLeft = departureRemainingMs(vehicle);
       if (departureLeft === Infinity) return "상차 대기";
@@ -1482,7 +1537,7 @@
       return minutes ? `${minutes}분 ${String(seconds).padStart(2, "0")}초` : `${seconds}초`;
     }
     function stopEtaList(vehicle) {
-      if (vehicle.completed) return vehicle.stops.map(() => "완료");
+      if (vehicle.completed) return vehicle.stops.map((stop) => completedTimeText(vehicle, stop.no));
       const departureLeft = departureRemainingMs(vehicle);
       if (departureLeft === Infinity) return vehicle.stops.map(() => "상차 대기");
       let seconds = (departureLeft + dwellRemainingMs(vehicle)) / 1000;
@@ -1490,7 +1545,7 @@
       const baseMs = simulatedNowMs();
       let lastEtaMs = baseMs;
       return stops.map((meters, i) => {
-        if (i + 1 <= vehicle.done) return "완료";
+        if (i + 1 <= vehicle.done) return completedTimeText(vehicle, i + 1);
         if (timeScale() <= 0) return "대기";
         if (i > vehicle.done) seconds += stopDwellMs() / 1000;
         seconds += i === vehicle.done ? remainingLegSeconds(vehicle, i) : legDurationSeconds(vehicle, i);
@@ -1512,6 +1567,36 @@
         seen.add(key);
         return true;
       });
+    }
+    function customerRouteTargets(shipments) {
+      return Object.values(shipments.reduce((acc, shipment) => {
+        const vehicleId = shipment.vehicleId || selectedCustomerOrder().vehicleId;
+        if (!acc[vehicleId] || Number(shipment.stopNo || 0) > Number(acc[vehicleId].stopNo || 0)) acc[vehicleId] = shipment;
+        return acc;
+      }, {}));
+    }
+    function customerShipmentGroups(shipments, order = selectedCustomerOrder()) {
+      return Object.values(shipments.reduce((acc, shipment) => {
+        const targetVehicle = shipmentVehicle(shipment);
+        const stop = customerStop(targetVehicle, shipment.stopNo);
+        const group = acc[targetVehicle.id] ||= { vehicle: targetVehicle, rows: [] };
+        group.rows.push({ no: group.rows.length + 1, shipment, name: shipment.destinationName || order.destinationName || stop?.name || "배송지" });
+        return acc;
+      }, {}));
+    }
+    function selectedCustomerGroup(groups) {
+      return groups.find((group) => group.vehicle.id === state.selectedVehicleId) || groups[0] || { vehicle: customerVehicle(), rows: [] };
+    }
+    function customerTargetRow(group) {
+      return group.rows.find((row) => group.vehicle.done < Number(row.shipment.stopNo || 0)) || group.rows.at(-1) || null;
+    }
+    function selectCustomerVehicle(vehicleId) {
+      const shipment = orderShipments().find((item) => shipmentVehicle(item).id === vehicleId) || orderShipments()[0] || selectedCustomerOrder();
+      const vehicle = shipmentVehicle(shipment);
+      state.selectedVehicleId = vehicle.id;
+      state.selectedStopNo = shipment.stopNo || selectedCustomerOrder().stopNo;
+      state.selectedCourierId = courierFor(vehicle).id;
+      return vehicle;
     }
     function customerVehicle(order = selectedCustomerOrder()) { return vehicleById(order.vehicleId) || vehicles[0]; }
     function shipmentVehicle(shipment) { return vehicleById(shipment.vehicleId) || customerVehicle(); }
@@ -1535,18 +1620,21 @@
     }
     function customerStatusText(vehicle = customerVehicle(), stopNo = selectedCustomerOrder().stopNo) {
       if (vehicle.completed || vehicle.done >= stopNo) return "배송 완료";
+      if (departureRemainingMs(vehicle) === Infinity || departureRemainingMs(vehicle) > 0) return "배송 예정";
+      const nextStop = Math.min(vehicle.done + 1, vehicle.stops.length);
       if (vehicle.done === stopNo && dwellRemainingMs(vehicle) > 0) return "상품 하차 중";
+      if (Number(stopNo) !== nextStop) return "배송 예정";
       const etaMs = customerArrivalEtaMs(vehicle, stopNo);
       if (etaMs && etaMs - simulatedNowMs() <= 5 * 60 * 1000) return "곧 도착";
       return "배송중";
     }
     function customerEtaText(vehicle = customerVehicle(), stopNo = selectedCustomerOrder().stopNo) {
-      if (vehicle.completed || vehicle.done >= stopNo) return "도착 완료";
+      if (vehicle.completed || vehicle.done >= stopNo) return completedTimeText(vehicle, stopNo, "도착 완료");
       const etaMs = customerArrivalEtaMs(vehicle, stopNo);
       return etaMs ? timeLabel(etaMs) : "대기";
     }
     function customerRemainingText(vehicle = customerVehicle(), stopNo = selectedCustomerOrder().stopNo) {
-      if (vehicle.completed || vehicle.done >= stopNo) return "도착 완료";
+      if (vehicle.completed || vehicle.done >= stopNo) return completedTimeText(vehicle, stopNo, "도착 완료");
       const etaMs = customerArrivalEtaMs(vehicle, stopNo);
       if (!etaMs) return "도착 대기";
       const totalSeconds = Math.max(0, Math.ceil((etaMs - simulatedNowMs()) / 1000));
@@ -1555,7 +1643,7 @@
       return minutes ? `${minutes}분 ${String(seconds).padStart(2, "0")}초 뒤 도착` : `${seconds}초 뒤 도착`;
     }
     function customerDwellWindowText(vehicle = customerVehicle(), stopNo = selectedCustomerOrder().stopNo) {
-      if (vehicle.completed || vehicle.done >= stopNo) return "하차 완료";
+      if (vehicle.completed || vehicle.done >= stopNo) return completedTimeText(vehicle, stopNo, "하차 완료");
       const etaMs = customerArrivalEtaMs(vehicle, stopNo);
       if (!etaMs) return "하차 대기";
       return `${timeLabel(etaMs)}–${timeLabel(etaMs + stopDwellMs())}`;
@@ -1571,31 +1659,35 @@
     function customerMapData() {
       const order = selectedCustomerOrder();
       const shipments = orderShipments(order);
-      const routes = state.customerRouteVisible ? shipments.map((shipment) => {
+      const routes = state.customerRouteVisible ? customerRouteTargets(shipments).map((shipment) => {
         const coords = customerRouteCoords(shipment);
         return coords.length > 1 ? routeFeature(coords, { vehicleId: shipment.vehicleId, customerRoute: true, orderNo: order.orderNo }) : null;
       }).filter(Boolean) : [];
+      const stopSequenceByVehicle = {};
       return {
         origin: fc([]),
         routes: fc([]),
         routeSelected: fc(routes),
         routeDone: fc([]),
         routeNext: fc([]),
-        stops: fc(shipments.map((shipment, i) => {
+        stops: fc(shipments.map((shipment) => {
           const vehicle = shipmentVehicle(shipment);
           const stop = customerStop(vehicle, shipment.stopNo);
           const coord = customerDestinationCoord(shipment) || stop?.coord;
+          const sequence = (stopSequenceByVehicle[vehicle.id] = (stopSequenceByVehicle[vehicle.id] || 0) + 1);
+          const tone = customerStatusChipClass(customerStatusText(vehicle, shipment.stopNo));
           return coord ? pointFeature(coord, {
             vehicleId: vehicle.id,
             stopNo: shipment.stopNo,
-            customerSequence: i + 1,
-            label: String(CUSTOMER_INQUIRY_MODE ? i + 1 : shipment.stopNo),
+            customerSequence: sequence,
+            label: String(CUSTOMER_INQUIRY_MODE ? sequence : shipment.stopNo),
             name: shipment.destinationName || order.destinationName || stop?.name || "",
-            pinImage: "stop-pin-selected",
+            pinImage: tone === "gray" ? "stop-pin-done" : tone === "green" ? "stop-pin-selected" : "stop-pin-default",
             customerVisible: true,
             selected: true,
-            active: true,
-            nextStop: false,
+            active: tone === "green",
+            nextStop: tone === "green",
+            done: tone === "gray",
             risk: false,
             mutedDestination: false
           }) : null;
@@ -1627,6 +1719,7 @@
       const order = selectedCustomerOrder();
       const data = state.lastCustomerMapData || customerMapData();
       const shipments = orderShipments(order);
+      const selectedGroup = selectedCustomerGroup(customerShipmentGroups(shipments, order));
       const first = shipments[0] || order;
       const stop = customerStop(shipmentVehicle(first), first.stopNo);
       const adminChromeVisible = [".left-tabs", ".side", "#pageContent", "#notificationIsland", "#floatingDriverCard"].some(visibleElement);
@@ -1635,9 +1728,12 @@
         urlMode: demoMode() ? `demo=${demoMode()}` : "",
         orderNo: order.orderNo,
         orderNos: CUSTOMER_INQUIRY_MODE ? CUSTOMER_INQUIRY_ORDERS.map((item) => item.orderNo) : [order.orderNo],
+        selectedCustomerVehicleId: selectedGroup.vehicle.id,
         vehicleIds: (data.vehicles.features || []).map((feature) => feature.properties.vehicleId),
+        vehicleStopCounts: shipments.reduce((acc, shipment) => { const id = shipmentVehicle(shipment).id; acc[id] = (acc[id] || 0) + 1; return acc; }, {}),
         destination: { stopNo: first.stopNo || order.stopNo, name: first.destinationName || order.destinationName || stop?.name || "" },
         destinationLabels: (data.stops.features || []).map((feature) => feature.properties.label),
+        visibleDestinationLabels: selectedGroup.rows.map((row) => String(row.no)),
         sourceCounts: {
           vehicles: featureCount(data.vehicles),
           destinations: featureCount(data.stops),
@@ -1649,53 +1745,104 @@
         remainingText: customerRemainingText(shipmentVehicle(first), first.stopNo)
       };
     }
+    function customerStatusChipClass(status) {
+      return status === "배송 완료" ? "gray" : status === "배송 예정" ? "blue" : "green";
+    }
+    function customerRowMeta(order, shipment, vehicle) {
+      const eta = customerEtaText(vehicle, shipment.stopNo);
+      return eta.startsWith("도착 완료") ? eta : `도착 예정 ${eta}`;
+    }
     function renderCustomerOrderCard() {
       const card = $("customerOrderCard");
       if (!card) return;
       const order = selectedCustomerOrder();
       const shipments = orderShipments(order);
-      const first = shipments[0] || order;
-      const vehicle = shipmentVehicle(first);
+      const groups = customerShipmentGroups(shipments, order);
+      const selectedGroup = selectedCustomerGroup(groups);
+      const visibleRows = selectedGroup.rows;
+      const visibleShipments = visibleRows.map((row) => row.shipment);
+      const targetRow = customerTargetRow(selectedGroup);
+      const first = targetRow?.shipment || visibleShipments[0] || shipments[0] || order;
+      const vehicle = selectedGroup.vehicle || shipmentVehicle(first);
       const status = customerStatusText(vehicle, first.stopNo);
       const eta = customerEtaText(vehicle, first.stopNo);
       const remaining = customerRemainingText(vehicle, first.stopNo);
       const dwell = customerDwellWindowText(vehicle, first.stopNo);
+      const visibleCargo = orderCargo(order).filter((item) => shipmentVehicle({ ...order, ...item }).id === vehicle.id);
       card.hidden = false;
       card.innerHTML = `
-        ${CUSTOMER_INQUIRY_MODE ? `<div class="customer-cargo"><div class="customer-cargo-title">주문 목록</div>${CUSTOMER_INQUIRY_ORDERS.map((item) => `<button class="customer-vehicle-target${item.orderNo === order.orderNo ? " active" : ""}" type="button" data-order-no="${safeText(item.orderNo)}"><strong>${safeText(item.orderNo)}</strong><span>${safeText(item.recipient)}</span></button>`).join("")}</div>` : ""}
         <div class="customer-order-head">
-          <div><strong>${safeText(order.recipient)}</strong><small>${safeText(order.orderNo)}</small></div>
-          <span class="chip ${status === "배송 완료" ? "green" : status === "곧 도착" ? "amber" : "blue"}">${safeText(status)}</span>
+          <div><strong>${safeText(order.recipient)}</strong>${CUSTOMER_INQUIRY_MODE ? "" : `<small>${safeText(order.orderNo)}</small>`}</div>
+          <span id="customerStatusChip" class="chip ${customerStatusChipClass(status)}">${safeText(status)}</span>
         </div>
-        <div class="customer-destination"><strong>${safeText(shipments.length > 1 ? `${shipments.length}개 배송지` : (order.destinationName || first.destinationName))}</strong><span>${safeText(shipments.length > 1 ? shipments.map((shipment, i) => `${i + 1}. ${shipment.destinationName || order.destinationName}`).join(" · ") : (order.destinationAddress || first.destinationAddress))}</span></div>
+        ${CUSTOMER_INQUIRY_MODE ? `<section class="customer-section"><div class="customer-list">${CUSTOMER_INQUIRY_ORDERS.map((item) => `<button class="customer-vehicle-target${item.orderNo === order.orderNo ? " active" : ""}" type="button" data-order-no="${safeText(item.orderNo)}"><strong>${safeText(item.orderNo)}</strong><span>${safeText(item.recipient)}</span></button>`).join("")}</div></section>` : ""}
+        <section class="customer-section"><div class="customer-section-head"><span>차량 목록</span><b>배송 경로 표시 중</b></div><div class="customer-list">
+          ${groups.map((group) => `<button class="customer-route-group${group.vehicle.id === vehicle.id ? " active" : ""}" type="button" data-customer-route="${safeText(group.vehicle.id)}"><span class="customer-route-head"><strong>${safeText(group.vehicle.plate)}</strong><span>${group.rows.length}개 배송지</span></span></button>`).join("")}
+        </div></section>
         <div class="customer-status-grid">
           <div class="customer-status-item remaining"><span>남은 시간</span><b id="customerRemainingText">${safeText(remaining)}</b></div>
           <div class="customer-status-item"><span>도착 예정</span><b id="customerEtaText">${safeText(eta)}</b></div>
           <div class="customer-status-item"><span>정차·하차 예상</span><b id="customerDwellText">${safeText(dwell)}</b></div>
         </div>
-        ${shipments.map((shipment, i) => {
-          const targetVehicle = shipmentVehicle(shipment);
-          const stop = customerStop(targetVehicle, shipment.stopNo);
-          return `<button class="customer-vehicle-target" type="button" data-customer-route="true"><strong>${safeText(targetVehicle.plate)}</strong><span>${i + 1}. ${safeText(shipment.destinationName || order.destinationName || stop?.name || "배송지")} 배송 경로 표시 중</span></button>`;
-        }).join("")}
-        <div class="customer-cargo"><div class="customer-cargo-title">배송 품목</div>
-          ${orderCargo(order).map((item) => {
-            const targetVehicle = shipmentVehicle({ ...order, ...item });
-            return `<div class="customer-cargo-row"><span>${safeText(item.name)} · ${safeText(targetVehicle.plate)}</span><b>${safeText(item.qty)}</b></div>`;
+        <section class="customer-section"><div class="customer-section-head"><span>배송지 목록</span><b>${safeText(vehicle.plate)} · ${visibleRows.length}개</b></div><div class="customer-list">
+          ${visibleRows.map((row) => {
+            const shipment = row.shipment;
+            const targetVehicle = shipmentVehicle(shipment);
+            const rowStatus = customerStatusText(targetVehicle, shipment.stopNo);
+            const tone = customerStatusChipClass(rowStatus);
+            return `<div class="customer-destination-row status-${tone}${row === targetRow ? " active" : ""}" data-customer-stop="${Number(shipment.stopNo || order.stopNo)}" data-customer-vehicle="${safeText(targetVehicle.id)}"><i>${row.no}</i><span><strong>${safeText(row.name)}</strong><small class="customer-row-meta">${safeText(customerRowMeta(order, shipment, targetVehicle))}</small></span><span class="customer-row-status chip ${tone}">${safeText(rowStatus)}</span></div>`;
           }).join("")}
-        </div>
-        <p class="customer-hint">현재 차량 위치에서 고객 배송지까지의 경로가 바로 표시됩니다.</p>`;
+        </div></section>
+        <section class="customer-section"><div class="customer-section-head"><span>배송 품목</span><b>${visibleCargo.length}건</b></div><div class="customer-cargo">
+          ${visibleCargo.map((item) => `<div class="customer-cargo-row"><span>${safeText(item.name)}</span><b>${safeText(item.qty)}</b></div>`).join("")}
+        </div></section>`;
       card.querySelectorAll("[data-order-no]").forEach((button) => button.addEventListener("click", () => {
         state.selectedCustomerOrderNo = button.dataset.orderNo;
         const next = selectedCustomerOrder();
         state.selectedVehicleId = next.vehicleId;
         state.selectedStopNo = next.stopNo;
         renderCustomerOrderCard();
-        hydrateRoutes();
         updateMapData();
+        fitCustomerOrderBounds(next);
+        hydrateRoutes().then(() => fitCustomerOrderBounds(next));
       }));
-      card.querySelector("[data-customer-route]")?.addEventListener("click", () => showCustomerRouteToDestination("customer-card"));
+      card.querySelectorAll("[data-customer-route]").forEach((button) => button.addEventListener("click", () => showCustomerRouteToDestination("customer-card", button.dataset.customerRoute)));
     }
+    function patchCustomerOrderCardLive() {
+      const card = $("customerOrderCard");
+      if (!card || card.hidden) { renderCustomerOrderCard(); return; }
+      const order = selectedCustomerOrder();
+      const shipments = orderShipments(order);
+      const selectedGroup = selectedCustomerGroup(customerShipmentGroups(shipments, order));
+      const visibleShipments = selectedGroup.rows.map((row) => row.shipment);
+      const targetRow = customerTargetRow(selectedGroup);
+      const first = targetRow?.shipment || visibleShipments[0] || shipments[0] || order;
+      const vehicle = selectedGroup.vehicle || shipmentVehicle(first);
+      const status = customerStatusText(vehicle, first.stopNo);
+      const statusChip = $("customerStatusChip");
+      if (statusChip) { statusChip.className = `chip ${customerStatusChipClass(status)}`; statusChip.textContent = status; }
+      const remaining = $("customerRemainingText");
+      if (remaining) remaining.textContent = customerRemainingText(vehicle, first.stopNo);
+      const eta = $("customerEtaText");
+      if (eta) eta.textContent = customerEtaText(vehicle, first.stopNo);
+      const dwell = $("customerDwellText");
+      if (dwell) dwell.textContent = customerDwellWindowText(vehicle, first.stopNo);
+      visibleShipments.forEach((shipment) => {
+        const targetVehicle = shipmentVehicle(shipment);
+        const row = card.querySelector(`[data-customer-vehicle="${CSS.escape(targetVehicle.id)}"][data-customer-stop="${Number(shipment.stopNo || order.stopNo)}"]`);
+        if (!row) return;
+        row.classList.toggle("active", targetRow?.shipment === shipment);
+        const meta = row.querySelector(".customer-row-meta");
+        if (meta) meta.textContent = customerRowMeta(order, shipment, targetVehicle);
+        const rowStatus = customerStatusText(targetVehicle, shipment.stopNo);
+        const tone = customerStatusChipClass(rowStatus);
+        row.classList.remove("status-blue", "status-green", "status-gray");
+        row.classList.add(`status-${tone}`);
+        const chip = row.querySelector(".customer-row-status");
+        if (chip) { chip.className = `customer-row-status chip ${tone}`; chip.textContent = rowStatus; }
+      });
+    }
+
     function renderCustomerMode() {
       document.body.classList.add("customer-delivery-demo");
       document.querySelector(".top h1").textContent = CUSTOMER_INQUIRY_MODE ? "Clever - 고객사 Demo" : "Clever - 배송 조회 Demo";
@@ -1707,14 +1854,14 @@
       $("floatingDriverCard").hidden = true;
       renderCustomerOrderCard();
     }
-    function showCustomerRouteToDestination(reason = "vehicle") {
+    function showCustomerRouteToDestination(reason = "vehicle", vehicleId = "") {
       if (!CUSTOMER_DELIVERY_MODE) return false;
+      const vehicle = vehicleId ? selectCustomerVehicle(vehicleId) : selectCustomerVehicle(state.selectedVehicleId);
       state.customerRouteVisible = true;
       state.customerRouteRequestedAt = simulatedNowMs();
       updateMapData();
       renderCustomerOrderCard();
       const order = selectedCustomerOrder();
-      const vehicle = customerVehicle(order);
       const coord = vehiclePosition(vehicle);
       if (coord) easeMap({ center: coord, zoom: 13.9, duration: 520, essential: true });
       logApi("POST", `${CLEVER_SERVER}/demo/customer-route`, { orderNo: order.orderNo, vehicle: vehicle.id, reason }, "info");
@@ -1800,13 +1947,12 @@
       return "예정됨";
     }
     function statusChipClass(status) {
-      if (status === "완료") return "green";
-      if (status === "진행중") return "blue";
-      if (status === "대기중") return "amber";
-      return "mini";
+      if (status === "완료") return "gray";
+      if (status === "진행중") return "green";
+      return "blue";
     }
     function targetDateTime(eta) {
-      if (eta === "완료") return "배송 완료";
+      if (eta.startsWith("완료")) return eta;
       const day = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" });
       return `${day} ${eta}`;
     }
@@ -1880,7 +2026,7 @@
           </section>
           <section class="work-column" aria-label="전체 타임라인">
             <div class="work-live-head">
-              <div class="tab-line"><span>전체 타임라인</span><span class="chip ${tracking ? "blue" : "mini"}" id="workTrackingChip">${tracking ? "트레킹 중" : "대기"}</span></div>
+              <div class="tab-line"><span>전체 타임라인</span><span class="chip ${tracking ? "green" : "mini"}" id="workTrackingChip">${tracking ? "트레킹 중" : "대기"}</span></div>
               <div class="work-live-actions">
                 <button class="btn primary" type="button" data-work-track="true">실시간 트레킹</button>
                 <button class="btn" type="button" data-work-refresh="true">새로고침</button>
@@ -1895,7 +2041,7 @@
             <div class="work-order-detail">
               <section class="work-selected-stop">
                 <strong>${stop.no}. ${safeText(stop.name)}</strong>
-                <span>${safeText(workAreaLabel(vehicle, stop))} ${selectedEta === "완료" ? "배송 완료" : `${safeText(selectedEta)} 도착 예정`}</span>
+                <span>${safeText(workAreaLabel(vehicle, stop))} ${selectedEta.startsWith("완료") ? safeText(selectedEta) : `${safeText(selectedEta)} 도착 예정`}</span>
               </section>
               <section class="work-cargo-detail">
                 <div class="work-block-title"><span>주문 품목</span><span class="chip mini">${cargoFor(vehicle, stop).length}개 품목</span></div>
@@ -1905,7 +2051,7 @@
               </section>
               <section class="proof-image-grid" aria-label="증빙 이미지 영역">
                 ${proofStatusFor(vehicle, stop).map((proof) => `<details class="proof-image-card ${proof.done ? "done" : ""}">
-                  <summary class="proof-image-head"><span>${safeText(proof.label)}</span><span class="chip ${proof.done ? "green" : "mini"}">${proof.done ? "확보" : "대기"}</span></summary>
+                  <summary class="proof-image-head"><span>${safeText(proof.label)}</span><span class="chip ${proof.done ? "gray" : "blue"}">${proof.done ? "확보" : "대기"}</span></summary>
                   <div class="proof-image-box">${proof.done ? `${safeText(proof.label)} 이미지` : `${safeText(proof.label)} 업로드 영역`}</div>
                 </details>`).join("")}
               </section>
@@ -1916,7 +2062,7 @@
     }
     function renderWorkActionPanel(vehicle, stop) {
       const dayLabel = (offset = 0) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }); };
-      const entries = vehicles.flatMap((v) => stopEtaList(v).map((eta, i) => ({ vehicle: v, stop: v.stops[i], time: eta, day: eta === "완료" ? "배송 완료" : dayLabel(0), status: stopStatus(v, v.stops[i]), driver: courierFor(v).name })));
+      const entries = vehicles.flatMap((v) => stopEtaList(v).map((eta, i) => ({ vehicle: v, stop: v.stops[i], time: eta, day: eta.startsWith("완료") ? "배송 완료" : dayLabel(0), status: stopStatus(v, v.stops[i]), driver: courierFor(v).name })));
       const openEntries = entries.filter((entry) => entry.status !== "완료");
       const uploadDay = dayLabel(2);
       const sheetRows = Array.from({ length: 27 }, (_, i) => openEntries[i % openEntries.length]).map((entry, i) => ({ ...entry, day: uploadDay, time: `${String(9 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`, item: cargoFor(entry.vehicle, entry.stop)[0] }));
@@ -1975,7 +2121,7 @@
       const etaList = stopEtaList(vehicle);
       const tracking = state.trackingVehicleId === vehicle.id;
       const chip = $("workTrackingChip");
-      if (chip) { chip.className = `chip ${tracking ? "blue" : "mini"}`; chip.textContent = tracking ? "트레킹 중" : "대기"; }
+      if (chip) { chip.className = `chip ${tracking ? "green" : "mini"}`; chip.textContent = tracking ? "트레킹 중" : "대기"; }
       document.querySelectorAll("[data-work-eta]").forEach((node) => {
         const no = Number(node.dataset.workEta);
         node.textContent = etaList[no - 1] || "대기";
@@ -1997,8 +2143,8 @@
         const missing = Math.abs(seed) % 5 === 0;
         const partial = Math.abs(seed) % 4 === 0;
         if (missing) return { label: "미비 1건", tone: "amber" };
-        if (partial) return { label: "2건 완료", tone: "blue" };
-        return { label: "3건 완료", tone: "green" };
+        if (partial) return { label: "2건 완료", tone: "gray" };
+        return { label: "3건 완료", tone: "gray" };
       };
       const current = sourceVehicles.flatMap((vehicle) => {
         const doneStops = vehicle.stops.slice(0, Math.min(vehicle.done || 0, vehicle.stops.length));
@@ -2172,7 +2318,7 @@
       renderPage("기록", "완료한 배송건과 현장 문제, 다음 배송 팁을 저장합니다.", `
         <div class="page-grid">
           <section class="page-panel wide">
-            <div class="tab-line"><span>완료 배송 기록</span><span class="chip green">${records.length}건 저장됨</span></div>
+            <div class="tab-line"><span>완료 배송 기록</span><span class="chip gray">${records.length}건 저장됨</span></div>
             <div class="record-scroll"><table class="page-table"><thead><tr><th>완료 일시</th><th>배송지</th><th>차량</th><th>문제 기록</th><th>배송팁</th></tr></thead><tbody>
               ${records.map((record, i) => `<tr class="record-row ${i === state.selectedRecordIndex ? "active" : ""}" data-record="${i}"><td>${record.date} ${record.time}</td><td>${record.stop.name}</td><td>${record.vehicle.plate}</td><td>${record.issue}</td><td>${record.tip}</td></tr>`).join("")}
             </tbody></table></div>
@@ -2283,7 +2429,7 @@
     function destinationCollapseData(vehicle = selectedVehicle()) {
       if (vehicle.completed) {
         const stop = vehicle.stops.at(-1);
-        return { label: "배송 완료", name: stop?.name || "운행 종료", eta: "완료" };
+        return { label: "배송 완료", name: stop?.name || "운행 종료", eta: completedTimeText(vehicle, vehicle.stops.length) };
       }
       const dwell = dwellRemainingMs(vehicle);
       if (dwell > 0 && vehicle.done > 0) {
@@ -2611,7 +2757,7 @@
     function renderLivePanels() {
       // Telemetry ticks must not rebuild fleet/destination list HTML. Existing rows keep click handlers,
       // while compact detail views and tracking camera are patched live.
-      if (CUSTOMER_DELIVERY_MODE) { renderCustomerOrderCard(); updateMapData(); return; }
+      if (CUSTOMER_DELIVERY_MODE) { patchCustomerOrderCardLive(); updateMapData(); return; }
       patchLiveControlPanel();
       patchSelectedDriverCard();
       patchLiveTemperaturePanel();
@@ -2716,6 +2862,7 @@
     }
     function stopPinImage(vehicle, stop, selected) {
       const isSpotlightVehicle = !!selected && vehicle.id === selected.id;
+      if (stop.no <= vehicle.done) return "stop-pin-done";
       if (selected && !isSpotlightVehicle) return "stop-pin-muted";
       if (stop.no === riskStopNo(vehicle)) return "stop-pin-risk";
       return isSpotlightVehicle && stop.no === nextStopNo(vehicle) ? "stop-pin-selected" : "stop-pin-default";
@@ -2853,6 +3000,52 @@
       markProgrammaticCamera();
       state.map.easeTo(options);
     }
+    function customerFitPadding() {
+      const mapRect = state.map.getContainer().getBoundingClientRect();
+      const padding = { top: 70, right: 70, bottom: 70, left: 70 };
+      const card = $("customerOrderCard");
+      if (card && !card.hidden) {
+        const rect = card.getBoundingClientRect();
+        const overlaps = rect.left < mapRect.right && rect.right > mapRect.left && rect.top < mapRect.bottom && rect.bottom > mapRect.top;
+        if (overlaps) padding.right = Math.max(padding.right, Math.ceil(mapRect.right - rect.left + 24));
+      }
+      const top = document.querySelector(".top-cluster");
+      if (top) {
+        const rect = top.getBoundingClientRect();
+        const overlaps = rect.left < mapRect.right && rect.right > mapRect.left && rect.top < mapRect.bottom && rect.bottom > mapRect.top;
+        if (overlaps) padding.top = Math.max(padding.top, Math.ceil(rect.bottom - mapRect.top + 24));
+      }
+      padding.right = Math.min(padding.right, Math.max(70, Math.floor(mapRect.width - 220)));
+      padding.top = Math.min(padding.top, Math.max(70, Math.floor(mapRect.height - 220)));
+      return padding;
+    }
+    function fitCustomerOrderBounds(order = selectedCustomerOrder()) {
+      if (!state.map || !globalThis.maplibregl) return false;
+      const coords = [];
+      orderShipments(order).forEach((shipment) => {
+        const vehicle = shipmentVehicle(shipment);
+        const current = vehiclePosition(vehicle);
+        const destination = customerDestinationCoord(shipment);
+        const route = customerRouteCoords(shipment);
+        if (current) coords.push(current);
+        if (route.length > 1) coords.push(...route);
+        if (destination) coords.push(destination);
+      });
+      if (!coords.length) return false;
+      const bounds = coords.reduce((box, coord) => box.extend(coord), new maplibregl.LngLatBounds(coords[0], coords[0]));
+      const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+      const lngPad = Math.max((ne.lng - sw.lng) * .12, .004);
+      const latPad = Math.max((ne.lat - sw.lat) * .12, .004);
+      bounds.extend([sw.lng - lngPad, sw.lat - latPad]).extend([ne.lng + lngPad, ne.lat + latPad]);
+      markProgrammaticCamera();
+      state.map.fitBounds(bounds, {
+        padding: customerFitPadding(),
+        maxZoom: 13.8,
+        duration: 650,
+        essential: true
+      });
+      return true;
+    }
     function clearSpotlight(reason = "manual") {
       if (!state.spotlightVehicleId && !state.driverProfileVisible && !state.trackingVehicleId) return;
       const vehicleId = state.spotlightVehicleId || state.trackingVehicleId;
@@ -2936,7 +3129,7 @@
       return true;
     }
     function selectVehicle(id, stopNo = null, enableTracking = true) {
-      if (CUSTOMER_DELIVERY_MODE) return showCustomerRouteToDestination("select-vehicle");
+      if (CUSTOMER_DELIVERY_MODE) return showCustomerRouteToDestination("select-vehicle", id);
       const previousVehicleId = state.selectedVehicleId;
       state.selectedVehicleId = id;
       const vehicle = selectedVehicle();
@@ -3012,15 +3205,15 @@
       state.map.addSource("vehicles", { type: "geojson", data: data.vehicles });
       ensureStopPinImages();
       ensureVehicleMarkerImages();
-      state.map.addLayer({ id: "routes", type: "line", source: "routes", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#000000", "line-width": 1, "line-opacity": ["case", ["get", "selected"], .32, .20] } });
+      state.map.addLayer({ id: "routes", type: "line", source: "routes", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#0066cc", "line-width": 1, "line-opacity": ["case", ["get", "selected"], .32, .20] } });
       state.map.addLayer({ id: "route-selected", type: "line", source: "route-selected", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#0066cc", "line-width": 4, "line-opacity": .88 } });
       state.map.addLayer({ id: "route-done", type: "line", source: "route-done", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#8e8e93", "line-width": 4.2, "line-opacity": .9 } });
       state.map.addLayer({ id: "route-next", type: "line", source: "route-next", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1f8b4c", "line-width": 5, "line-opacity": .95 } });
       state.map.addLayer({ id: "origin", type: "circle", source: "origin", paint: { "circle-radius": 9, "circle-color": "#000000", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
       state.map.addLayer({ id: "origin-label", type: "symbol", source: "origin", layout: { "text-field": "상차", "text-font": MAP_TEXT_FONT, "text-size": 12, "text-offset": [0, -1.8] }, paint: { "text-color": "#1d1d1f", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
-      state.map.addLayer({ id: "dropoffs", type: "circle", source: "dropoffs", minzoom: 15.5, paint: { "circle-radius": ["case", ["get", "active"], 5, ["get", "selected"], 4, 2.8], "circle-color": "#f79009", "circle-stroke-color": "#1d1d1f", "circle-stroke-width": 1.5 } });
-      state.map.addLayer({ id: "dropoff-labels", type: "symbol", source: "dropoffs", minzoom: 15.5, layout: { "text-field": "정차", "text-font": MAP_TEXT_FONT, "text-size": 9, "text-offset": [0, -1.15] }, paint: { "text-color": "#9a5a00", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
-      state.map.addLayer({ id: "stop-points", type: "circle", source: "stops", minzoom: DESTINATION_MARKER_MIN_ZOOM, layout: { "visibility": destinationLayerVisibility("point") }, paint: { "circle-radius": 7, "circle-color": ["case", ["get", "mutedDestination"], VEHICLE_MARKER_DEFAULT, ["get", "risk"], "#d92d20", ["get", "nextStop"], DESTINATION_MARKER_GREEN, DESTINATION_MARKER_BLUE], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+      state.map.addLayer({ id: "dropoffs", type: "circle", source: "dropoffs", minzoom: 15.5, paint: { "circle-radius": ["case", ["get", "active"], 5, ["get", "selected"], 4, 2.8], "circle-color": ["case", ["get", "active"], DESTINATION_MARKER_GREEN, DESTINATION_MARKER_BLUE], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1.5 } });
+      state.map.addLayer({ id: "dropoff-labels", type: "symbol", source: "dropoffs", minzoom: 15.5, layout: { "text-field": "정차", "text-font": MAP_TEXT_FONT, "text-size": 9, "text-offset": [0, -1.15] }, paint: { "text-color": "#0066cc", "text-halo-color": "#ffffff", "text-halo-width": 1 } });
+      state.map.addLayer({ id: "stop-points", type: "circle", source: "stops", minzoom: DESTINATION_MARKER_MIN_ZOOM, layout: { "visibility": destinationLayerVisibility("point") }, paint: { "circle-radius": 7, "circle-color": ["case", ["get", "done"], "#8e8e93", ["get", "mutedDestination"], VEHICLE_MARKER_DEFAULT, ["get", "risk"], "#d92d20", ["get", "nextStop"], DESTINATION_MARKER_GREEN, DESTINATION_MARKER_BLUE], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
       state.map.addLayer({ id: "stop-point-labels", type: "symbol", source: "stops", minzoom: DESTINATION_MARKER_MIN_ZOOM, layout: { "visibility": destinationLayerVisibility("point"), "symbol-sort-key": ["case", ["get", "nextStop"], 4000, ["get", "selected"], 3000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 10 }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.35)", "text-halo-width": .6 } });
       state.map.addLayer({ id: "stops", type: "symbol", source: "stops", minzoom: DESTINATION_MARKER_MIN_ZOOM, layout: { "visibility": destinationLayerVisibility("marker"), "icon-allow-overlap": true, "icon-anchor": "bottom", "icon-ignore-placement": true, "icon-image": ["get", "pinImage"], "icon-size": STOP_PIN_ICON_SIZE, "symbol-sort-key": ["case", ["get", "nextStop"], 4000, ["get", "selected"], 3000, 2000], "text-allow-overlap": true, "text-anchor": "center", "text-field": ["get", "label"], "text-font": MAP_TEXT_FONT, "text-ignore-placement": true, "text-size": 11, "text-offset": [0, -1.85] }, paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0, 0, 0, 0.28)", "text-halo-width": .7 } });
       state.map.addLayer({ id: "vehicles", type: "symbol", source: "vehicles", layout: { "icon-allow-overlap": true, "icon-anchor": "center", "icon-ignore-placement": true, "icon-image": ["get", "markerImage"], "icon-size": VEHICLE_MARKER_ICON_SIZE, "symbol-sort-key": ["case", ["boolean", ["get", "selected"], false], 5000, 2000] } });
@@ -3030,7 +3223,7 @@
         state.map.on("mouseleave", layer, () => { state.map.getCanvas().style.cursor = ""; });
       });
       state.map.on("click", "vehicles", (event) => {
-        if (CUSTOMER_DELIVERY_MODE) { showCustomerRouteToDestination("map-vehicle"); return; }
+        if (CUSTOMER_DELIVERY_MODE) { showCustomerRouteToDestination("map-vehicle", event.features[0].properties.vehicleId); return; }
         const destinationFeature = destinationFeatureAtEvent(event);
         if (destinationFeature && selectDestinationFeature(destinationFeature, event)) return;
         selectVehicle(event.features[0].properties.vehicleId, null, true);
@@ -3039,7 +3232,7 @@
       state.map.on("click", "stop-points", (event) => selectDestinationFeature(event.features[0], event));
       state.map.on("click", "dropoffs", (event) => selectDestinationFeature(event.features[0], event));
       ["routes", "route-selected", "route-next", "route-done"].forEach((layer) => state.map.on("click", layer, (event) => {
-        if (CUSTOMER_DELIVERY_MODE) { showCustomerRouteToDestination("map-route"); return; }
+        if (CUSTOMER_DELIVERY_MODE) { showCustomerRouteToDestination("map-route", event.features[0].properties.vehicleId); return; }
         if (performance.now() < (state.destinationClickLockUntil || 0)) return;
         selectVehicle(event.features[0].properties.vehicleId || state.selectedVehicleId, null, true);
       }));
