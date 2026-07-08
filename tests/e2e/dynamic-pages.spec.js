@@ -173,15 +173,72 @@ test.describe('customer delivery inquiry demo', () => {
     await expect(page.getByRole('heading', { name: 'Clever - 배송 조회 Demo' })).toBeVisible();
   }
 
-  test('settings exposes exact customer demo shortcut', async ({ page }) => {
+  test('settings exposes customer and order demo shortcuts', async ({ page }) => {
     await page.goto(`/?settings-shortcut=${Date.now()}`, { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: '설정' }).click();
-    const link = page.getByRole('link', { name: '배송조회 Demo로 이동' });
-    await expect(link).toBeVisible();
-    await expect(link).toHaveAttribute('href', 'index.html?demo=delivery-inquiry');
-    await link.click();
+    const customer = page.getByRole('link', { name: '고객사 Demo로 이동' });
+    const order = page.getByRole('link', { name: 'Order 배송조회 Demo로 이동' });
+    await expect(customer).toHaveAttribute('href', 'index.html?demo=customer-inquiry');
+    await expect(order).toHaveAttribute('href', 'index.html?demo=delivery-inquiry');
+    await order.click();
     await expect(page).toHaveURL(/demo=delivery-inquiry/);
     await expect(page.getByRole('heading', { name: 'Clever - 배송 조회 Demo' })).toBeVisible();
+  });
+
+  async function openCustomerInquiry(page) {
+    await page.goto(`/index.html?demo=customer-inquiry&case=${Date.now()}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.dsvDemo && typeof window.dsvDemo.customerSnapshot === 'function');
+    await expect(page.getByRole('heading', { name: 'Clever - 고객사 Demo' })).toBeVisible();
+  }
+
+  test('customer-inquiry shows customer-wide order list', async ({ page }) => {
+    await openCustomerInquiry(page);
+    const card = page.locator('#customerOrderCard');
+    await expect(card).toContainText('주문 목록');
+    await expect(card).toContainText('DSV-20260708-1001');
+    await expect(card).toContainText('DSV-20260708-1002');
+    const snapshot = await page.evaluate(() => window.dsvDemo.customerSnapshot());
+    expect(snapshot.mode).toBe('customer-inquiry');
+    expect(snapshot.orderNos).toEqual(['DSV-20260708-1001', 'DSV-20260708-1002']);
+  });
+
+  test('customer-inquiry defaults to multi-vehicle order detail', async ({ page }) => {
+    await openCustomerInquiry(page);
+    const card = page.locator('#customerOrderCard');
+    await expect(card).toContainText('응급 백신');
+    await expect(card).toContainText('23바 6303');
+    await expect(card).toContainText('24사 6404');
+    const snapshot = await page.evaluate(() => window.dsvDemo.customerSnapshot());
+    expect(snapshot.orderNo).toBe('DSV-20260708-1001');
+    expect(snapshot.vehicleIds.sort()).toEqual(['final12', 'to10']);
+    expect(snapshot.sourceCounts.vehicles).toBe(2);
+    expect(snapshot.sourceCounts.destinations).toBe(2);
+  });
+
+  test('customer-inquiry switches selected order detail', async ({ page }) => {
+    await openCustomerInquiry(page);
+    const card = page.locator('#customerOrderCard');
+    await card.locator('[data-order-no="DSV-20260708-1002"]').click();
+    await expect(card).toContainText('혈액 검체');
+    await expect(card).toContainText('서울아산병원');
+    await expect(card).not.toContainText('응급 백신');
+    const snapshot = await page.evaluate(() => window.dsvDemo.customerSnapshot());
+    expect(snapshot.orderNo).toBe('DSV-20260708-1002');
+    expect(snapshot.vehicleIds).toEqual(['to10']);
+    expect(snapshot.destinationLabels).toEqual(['1']);
+  });
+
+  test('customer-inquiry never renders other customer cargo', async ({ page }) => {
+    await openCustomerInquiry(page);
+    await expect(page.locator('#customerOrderCard')).not.toContainText('타 고객 개인정보 검체');
+    await expect(page.locator('#customerOrderCard')).not.toContainText('99박스');
+  });
+
+  test('customer-inquiry destination labels are customer sequence 1..N', async ({ page }) => {
+    await openCustomerInquiry(page);
+    const snapshot = await page.evaluate(() => window.dsvDemo.customerSnapshot());
+    expect(snapshot.destinationLabels).toEqual(['1', '2']);
+    expect(snapshot.sourceCounts.adminStops).toBe(0);
   });
 
   test('customer page has no admin search or admin chrome', async ({ page }) => {

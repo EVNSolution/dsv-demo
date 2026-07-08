@@ -489,6 +489,7 @@
       padding:0 14px; background:#fff; color:var(--ink); cursor:pointer; font-weight:1000;
     }
     .customer-vehicle-target span { color:var(--muted); font-size:12px; font-weight:900; }
+    .customer-vehicle-target.active { border-color: rgba(0,102,204,.35); background: var(--blue-soft); }
     .customer-cargo { display:grid; gap:7px; }
     .customer-cargo-title { color:var(--muted); font-size:12px; font-weight:1000; letter-spacing:-.02em; }
     .customer-cargo-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 11px; border:1px solid var(--hairline); border-radius:14px; background:#fff; font-size:13px; font-weight:900; }
@@ -623,10 +624,11 @@
     const FIXED_SPEED_KPH = 40;
     const FIXED_SPEED_MPS = FIXED_SPEED_KPH * 1000 / 3600;
     const DEBUG_LOGS = new URLSearchParams(location.search).has("debug");
-    function isCustomerDeliveryDemo() {
-      return new URLSearchParams(location.search).get('demo') === 'delivery-inquiry';
-    }
-    const CUSTOMER_DELIVERY_MODE = isCustomerDeliveryDemo();
+    function demoMode() { return new URLSearchParams(location.search).get('demo') || ''; }
+    function isCustomerDeliveryDemo() { return demoMode() === 'delivery-inquiry'; }
+    function isCustomerInquiryDemo() { return demoMode() === 'customer-inquiry'; }
+    const CUSTOMER_DELIVERY_MODE = isCustomerDeliveryDemo() || isCustomerInquiryDemo();
+    const CUSTOMER_INQUIRY_MODE = isCustomerInquiryDemo();
 
     const ORIGIN = {
       name: "군포복합물류센터",
@@ -710,6 +712,32 @@
         { name: "검체 운송 튜브", qty: "12EA" }
       ]
     };
+    CUSTOMER_DELIVERY_DEMO.shipments = [{
+      vehicleId: CUSTOMER_DELIVERY_DEMO.vehicleId,
+      stopNo: CUSTOMER_DELIVERY_DEMO.stopNo,
+      destinationName: CUSTOMER_DELIVERY_DEMO.destinationName,
+      destinationAddress: CUSTOMER_DELIVERY_DEMO.destinationAddress,
+      cargo: CUSTOMER_DELIVERY_DEMO.cargo
+    }];
+    const CUSTOMER_ORDER_FROM_QUERY = new URLSearchParams(location.search).get("order") || CUSTOMER_DELIVERY_DEMO.orderNo;
+    const CUSTOMER_DEFAULT_SHIPMENT = CUSTOMER_DELIVERY_DEMO.shipments[0];
+    const CUSTOMER_INQUIRY_ORDERS = [
+      {
+        orderNo: "DSV-20260708-1001", recipient: "삼성서울병원 약제팀",
+        destinationName: "삼성서울병원", destinationAddress: "서울 강남구 일원로 81", vehicleId: "to10", stopNo: 12,
+        cargo: [
+          { name: "임상시험 검체", qty: "4박스", vehicleId: "to10", stopNo: 12 },
+          { name: "냉장 항생제", qty: "6EA", vehicleId: "to10", stopNo: 12 },
+          { name: "응급 백신", qty: "3박스", vehicleId: "final12", stopNo: 1, destinationName: "서울성모병원", destinationAddress: "서울 서초구 반포대로 222" }
+        ],
+        otherCustomerCargo: [{ name: "타 고객 개인정보 검체", qty: "99박스", vehicleId: "depart01", stopNo: 1 }]
+      },
+      {
+        orderNo: "DSV-20260708-1002", recipient: "서울아산병원 진단검사의학팀",
+        destinationName: "서울아산병원", destinationAddress: "서울 송파구 올림픽로43길 88", vehicleId: "to10", stopNo: 6,
+        cargo: [{ name: "혈액 검체", qty: "2박스", vehicleId: "to10", stopNo: 6 }]
+      }
+    ];
     const vehicles = scenarioDefinitions.map((vehicle) => ({
       ...vehicle,
       title: vehicle.plate,
@@ -729,7 +757,7 @@
       stops: ROUTE_TEMPLATES[vehicle.route].map(([name, coord], i) => ({ no: i + 1, name, coord }))
     }));
 
-    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, lastTrackingAt: 0, lastTrackingSampleAt: 0, programmaticCameraUntil: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, riskDismissedUntil: 0, notifications: [], notificationOpen: false, notificationRingTimer: 0, destinationAnimationTimer: 0, temperatureTimelineUserUntil: 0, pendingTemperatureTimelineSignature: "", speedLevel: 5, dwellMinutes: 5, viewMode: "2d", destinationDisplayMode: "marker", activeTab: CUSTOMER_DELIVERY_MODE ? "customer" : "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, driverProfileVisible: false, spotlightVehicleId: "", workAction: "", uploadPreview: false, selectedRecordIndex: 0, selectedCourierId: "c01", trackingVehicleId: "", riskVehicleId: "unload04", map: null, selectedVehicleId: CUSTOMER_DELIVERY_MODE ? CUSTOMER_DELIVERY_DEMO.vehicleId : "depart01", selectedStopNo: CUSTOMER_DELIVERY_MODE ? CUSTOMER_DELIVERY_DEMO.stopNo : 1, customerRouteVisible: CUSTOMER_DELIVERY_MODE, customerRouteRequestedAt: 0, routes: {}, dropoffs: {}, routeLegs: {}, lastMapData: null, lastCustomerMapData: null };
+    const state = { running: false, timer: null, simStartedAt: 0, batchNo: 0, lastSampleAt: 0, lastPanelRenderAt: 0, lastTrackingAt: 0, lastTrackingSampleAt: 0, programmaticCameraUntil: 0, forcedRisk: false, forcedRiskStartedAt: 0, risk: false, riskDismissedUntil: 0, notifications: [], notificationOpen: false, notificationRingTimer: 0, destinationAnimationTimer: 0, temperatureTimelineUserUntil: 0, pendingTemperatureTimelineSignature: "", speedLevel: 5, dwellMinutes: 5, viewMode: "2d", destinationDisplayMode: "marker", activeTab: CUSTOMER_DELIVERY_MODE ? "customer" : "control", vehiclePanelOpen: false, destinationNoteOpen: false, destinationCollapsed: false, driverProfileVisible: false, spotlightVehicleId: "", workAction: "", uploadPreview: false, selectedRecordIndex: 0, selectedCourierId: "c01", trackingVehicleId: "", riskVehicleId: "unload04", map: null, selectedVehicleId: CUSTOMER_DELIVERY_MODE ? CUSTOMER_DEFAULT_SHIPMENT.vehicleId : "depart01", selectedStopNo: CUSTOMER_DELIVERY_MODE ? CUSTOMER_DEFAULT_SHIPMENT.stopNo : 1, selectedCustomerOrderNo: CUSTOMER_ORDER_FROM_QUERY, customerRouteVisible: CUSTOMER_DELIVERY_MODE, customerRouteRequestedAt: 0, routes: {}, dropoffs: {}, routeLegs: {}, lastMapData: null, lastCustomerMapData: null };
     const demoLogs = [];
     const routeCache = new Map();
     window.demoLogs = demoLogs;
@@ -1472,13 +1500,28 @@
     }
 
 
-    function customerVehicle() { return vehicleById(CUSTOMER_DELIVERY_DEMO.vehicleId) || vehicles[0]; }
-    function customerStop(vehicle = customerVehicle()) { return vehicle.stops[CUSTOMER_DELIVERY_DEMO.stopNo - 1] || vehicle.stops.at(-1); }
-    function customerDestinationCoord(vehicle = customerVehicle()) {
-      return dropoffsOf(vehicle)[CUSTOMER_DELIVERY_DEMO.stopNo - 1] || customerStop(vehicle)?.coord;
+    function selectedCustomerOrder() {
+      return CUSTOMER_INQUIRY_MODE ? (CUSTOMER_INQUIRY_ORDERS.find((order) => order.orderNo === state.selectedCustomerOrderNo) || CUSTOMER_INQUIRY_ORDERS[0]) : CUSTOMER_DELIVERY_DEMO;
     }
-    function customerArrivalEtaMs(vehicle = customerVehicle()) {
-      const targetStopNo = Math.min(Math.max(CUSTOMER_DELIVERY_DEMO.stopNo, 1), vehicle.stops.length);
+    function orderCargo(order = selectedCustomerOrder()) { return order.cargo || []; }
+    function orderShipments(order = selectedCustomerOrder()) {
+      const seen = new Set();
+      return orderCargo(order).map((item) => ({ ...order, ...item })).filter((item) => {
+        const key = `${item.vehicleId || order.vehicleId}:${item.stopNo || order.stopNo}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+    function customerVehicle(order = selectedCustomerOrder()) { return vehicleById(order.vehicleId) || vehicles[0]; }
+    function shipmentVehicle(shipment) { return vehicleById(shipment.vehicleId) || customerVehicle(); }
+    function customerStop(vehicle = customerVehicle(), stopNo = selectedCustomerOrder().stopNo) { return vehicle.stops[stopNo - 1] || vehicle.stops.at(-1); }
+    function customerDestinationCoord(shipment = selectedCustomerOrder()) {
+      const vehicle = shipmentVehicle(shipment);
+      return dropoffsOf(vehicle)[shipment.stopNo - 1] || customerStop(vehicle, shipment.stopNo)?.coord;
+    }
+    function customerArrivalEtaMs(vehicle = customerVehicle(), stopNo = selectedCustomerOrder().stopNo) {
+      const targetStopNo = Math.min(Math.max(stopNo, 1), vehicle.stops.length);
       const actual = (vehicle.arrivalEvents || []).find((event) => event.stopNo === targetStopNo);
       if (vehicle.completed || vehicle.done >= targetStopNo) return actual?.at || vehicle.arrivedAt || simulatedNowMs();
       const departureLeft = departureRemainingMs(vehicle);
@@ -1490,74 +1533,82 @@
       }
       return Math.max(simulatedNowMs() + 1000, simulatedNowMs() + seconds * 1000);
     }
-    function customerStatusText(vehicle = customerVehicle()) {
-      const targetStopNo = CUSTOMER_DELIVERY_DEMO.stopNo;
-      if (vehicle.completed || vehicle.done >= targetStopNo) return "배송 완료";
-      if (vehicle.done === targetStopNo && dwellRemainingMs(vehicle) > 0) return "상품 하차 중";
-      const etaMs = customerArrivalEtaMs(vehicle);
+    function customerStatusText(vehicle = customerVehicle(), stopNo = selectedCustomerOrder().stopNo) {
+      if (vehicle.completed || vehicle.done >= stopNo) return "배송 완료";
+      if (vehicle.done === stopNo && dwellRemainingMs(vehicle) > 0) return "상품 하차 중";
+      const etaMs = customerArrivalEtaMs(vehicle, stopNo);
       if (etaMs && etaMs - simulatedNowMs() <= 5 * 60 * 1000) return "곧 도착";
       return "배송중";
     }
-    function customerEtaText(vehicle = customerVehicle()) {
-      if (vehicle.completed || vehicle.done >= CUSTOMER_DELIVERY_DEMO.stopNo) return "도착 완료";
-      const etaMs = customerArrivalEtaMs(vehicle);
+    function customerEtaText(vehicle = customerVehicle(), stopNo = selectedCustomerOrder().stopNo) {
+      if (vehicle.completed || vehicle.done >= stopNo) return "도착 완료";
+      const etaMs = customerArrivalEtaMs(vehicle, stopNo);
       return etaMs ? timeLabel(etaMs) : "대기";
     }
-    function customerRemainingText(vehicle = customerVehicle()) {
-      if (vehicle.completed || vehicle.done >= CUSTOMER_DELIVERY_DEMO.stopNo) return "도착 완료";
-      const etaMs = customerArrivalEtaMs(vehicle);
+    function customerRemainingText(vehicle = customerVehicle(), stopNo = selectedCustomerOrder().stopNo) {
+      if (vehicle.completed || vehicle.done >= stopNo) return "도착 완료";
+      const etaMs = customerArrivalEtaMs(vehicle, stopNo);
       if (!etaMs) return "도착 대기";
       const totalSeconds = Math.max(0, Math.ceil((etaMs - simulatedNowMs()) / 1000));
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
       return minutes ? `${minutes}분 ${String(seconds).padStart(2, "0")}초 뒤 도착` : `${seconds}초 뒤 도착`;
     }
-    function customerDwellWindowText(vehicle = customerVehicle()) {
-      if (vehicle.completed || vehicle.done >= CUSTOMER_DELIVERY_DEMO.stopNo) return "하차 완료";
-      const etaMs = customerArrivalEtaMs(vehicle);
+    function customerDwellWindowText(vehicle = customerVehicle(), stopNo = selectedCustomerOrder().stopNo) {
+      if (vehicle.completed || vehicle.done >= stopNo) return "하차 완료";
+      const etaMs = customerArrivalEtaMs(vehicle, stopNo);
       if (!etaMs) return "하차 대기";
       return `${timeLabel(etaMs)}–${timeLabel(etaMs + stopDwellMs())}`;
     }
-    function customerRouteCoords(vehicle = customerVehicle()) {
+    function customerRouteCoords(shipment = selectedCustomerOrder()) {
+      const vehicle = shipmentVehicle(shipment);
       if (!routeReady(vehicle)) return [];
       const route = routeOf(vehicle);
-      const target = stopMeters(vehicle)[CUSTOMER_DELIVERY_DEMO.stopNo - 1] || routeStats(route).total;
+      const target = stopMeters(vehicle)[shipment.stopNo - 1] || routeStats(route).total;
       if (target <= (vehicle.meters || 0)) return [];
       return routeSegment(route, vehicle.meters || 0, target);
     }
     function customerMapData() {
-      const vehicle = customerVehicle();
-      const stop = customerStop(vehicle);
-      const destinationCoord = customerDestinationCoord(vehicle) || stop?.coord;
-      const routeCoords = state.customerRouteVisible ? customerRouteCoords(vehicle) : [];
+      const order = selectedCustomerOrder();
+      const shipments = orderShipments(order);
+      const routes = state.customerRouteVisible ? shipments.map((shipment) => {
+        const coords = customerRouteCoords(shipment);
+        return coords.length > 1 ? routeFeature(coords, { vehicleId: shipment.vehicleId, customerRoute: true, orderNo: order.orderNo }) : null;
+      }).filter(Boolean) : [];
       return {
         origin: fc([]),
         routes: fc([]),
-        routeSelected: routeCoords.length > 1 ? routeFeature(routeCoords, { vehicleId: vehicle.id, customerRoute: true }) : fc([]),
+        routeSelected: fc(routes),
         routeDone: fc([]),
         routeNext: fc([]),
-        stops: fc(destinationCoord ? [pointFeature(destinationCoord, {
-          vehicleId: vehicle.id,
-          stopNo: CUSTOMER_DELIVERY_DEMO.stopNo,
-          label: String(CUSTOMER_DELIVERY_DEMO.stopNo),
-          name: CUSTOMER_DELIVERY_DEMO.destinationName,
-          pinImage: "stop-pin-selected",
-          customerVisible: true,
-          selected: true,
-          active: true,
-          nextStop: false,
-          risk: false,
-          mutedDestination: false
-        })] : []),
+        stops: fc(shipments.map((shipment, i) => {
+          const vehicle = shipmentVehicle(shipment);
+          const stop = customerStop(vehicle, shipment.stopNo);
+          const coord = customerDestinationCoord(shipment) || stop?.coord;
+          return coord ? pointFeature(coord, {
+            vehicleId: vehicle.id,
+            stopNo: shipment.stopNo,
+            customerSequence: i + 1,
+            label: String(CUSTOMER_INQUIRY_MODE ? i + 1 : shipment.stopNo),
+            name: shipment.destinationName || order.destinationName || stop?.name || "",
+            pinImage: "stop-pin-selected",
+            customerVisible: true,
+            selected: true,
+            active: true,
+            nextStop: false,
+            risk: false,
+            mutedDestination: false
+          }) : null;
+        }).filter(Boolean)),
         dropoffs: fc([]),
-        vehicles: fc([pointFeature(vehiclePosition(vehicle), {
+        vehicles: fc(shipments.map((shipment) => shipmentVehicle(shipment)).filter((vehicle, i, list) => vehicle && list.findIndex((item) => item.id === vehicle.id) === i).map((vehicle) => pointFeature(vehiclePosition(vehicle), {
           vehicleId: vehicle.id,
           label: vehicle.plate,
           selected: true,
           markerImage: "vehicle-marker-spotlight",
           customerVisible: true,
           risk: !!vehicle.risk
-        })])
+        })))
       };
     }
     function featureCount(data) {
@@ -1573,15 +1624,20 @@
       return !el.hidden && style.display !== "none" && style.visibility !== "hidden" && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().height > 0;
     }
     function customerSnapshot() {
+      const order = selectedCustomerOrder();
       const data = state.lastCustomerMapData || customerMapData();
-      const stop = customerStop();
+      const shipments = orderShipments(order);
+      const first = shipments[0] || order;
+      const stop = customerStop(shipmentVehicle(first), first.stopNo);
       const adminChromeVisible = [".left-tabs", ".side", "#pageContent", "#notificationIsland", "#floatingDriverCard"].some(visibleElement);
       return {
-        mode: CUSTOMER_DELIVERY_MODE ? "delivery-inquiry" : "admin",
-        urlMode: new URLSearchParams(location.search).get("demo") === "delivery-inquiry" ? "demo=delivery-inquiry" : "",
-        orderNo: CUSTOMER_DELIVERY_DEMO.orderNo,
+        mode: CUSTOMER_INQUIRY_MODE ? "customer-inquiry" : CUSTOMER_DELIVERY_MODE ? "delivery-inquiry" : "admin",
+        urlMode: demoMode() ? `demo=${demoMode()}` : "",
+        orderNo: order.orderNo,
+        orderNos: CUSTOMER_INQUIRY_MODE ? CUSTOMER_INQUIRY_ORDERS.map((item) => item.orderNo) : [order.orderNo],
         vehicleIds: (data.vehicles.features || []).map((feature) => feature.properties.vehicleId),
-        destination: { stopNo: CUSTOMER_DELIVERY_DEMO.stopNo, name: CUSTOMER_DELIVERY_DEMO.destinationName || stop?.name || "" },
+        destination: { stopNo: first.stopNo || order.stopNo, name: first.destinationName || order.destinationName || stop?.name || "" },
+        destinationLabels: (data.stops.features || []).map((feature) => feature.properties.label),
         sourceCounts: {
           vehicles: featureCount(data.vehicles),
           destinations: featureCount(data.stops),
@@ -1590,39 +1646,59 @@
         },
         adminChromeVisible,
         customerRouteVisible: !!state.customerRouteVisible,
-        remainingText: customerRemainingText()
+        remainingText: customerRemainingText(shipmentVehicle(first), first.stopNo)
       };
     }
     function renderCustomerOrderCard() {
       const card = $("customerOrderCard");
       if (!card) return;
-      const vehicle = customerVehicle();
-      const status = customerStatusText(vehicle);
-      const eta = customerEtaText(vehicle);
-      const remaining = customerRemainingText(vehicle);
-      const dwell = customerDwellWindowText(vehicle);
+      const order = selectedCustomerOrder();
+      const shipments = orderShipments(order);
+      const first = shipments[0] || order;
+      const vehicle = shipmentVehicle(first);
+      const status = customerStatusText(vehicle, first.stopNo);
+      const eta = customerEtaText(vehicle, first.stopNo);
+      const remaining = customerRemainingText(vehicle, first.stopNo);
+      const dwell = customerDwellWindowText(vehicle, first.stopNo);
       card.hidden = false;
       card.innerHTML = `
+        ${CUSTOMER_INQUIRY_MODE ? `<div class="customer-cargo"><div class="customer-cargo-title">주문 목록</div>${CUSTOMER_INQUIRY_ORDERS.map((item) => `<button class="customer-vehicle-target${item.orderNo === order.orderNo ? " active" : ""}" type="button" data-order-no="${safeText(item.orderNo)}"><strong>${safeText(item.orderNo)}</strong><span>${safeText(item.recipient)}</span></button>`).join("")}</div>` : ""}
         <div class="customer-order-head">
-          <div><strong>${safeText(CUSTOMER_DELIVERY_DEMO.recipient)}</strong><small>${safeText(CUSTOMER_DELIVERY_DEMO.orderNo)}</small></div>
+          <div><strong>${safeText(order.recipient)}</strong><small>${safeText(order.orderNo)}</small></div>
           <span class="chip ${status === "배송 완료" ? "green" : status === "곧 도착" ? "amber" : "blue"}">${safeText(status)}</span>
         </div>
-        <div class="customer-destination"><strong>${safeText(CUSTOMER_DELIVERY_DEMO.destinationName)}</strong><span>${safeText(CUSTOMER_DELIVERY_DEMO.destinationAddress)}</span></div>
+        <div class="customer-destination"><strong>${safeText(shipments.length > 1 ? `${shipments.length}개 배송지` : (order.destinationName || first.destinationName))}</strong><span>${safeText(shipments.length > 1 ? shipments.map((shipment, i) => `${i + 1}. ${shipment.destinationName || order.destinationName}`).join(" · ") : (order.destinationAddress || first.destinationAddress))}</span></div>
         <div class="customer-status-grid">
           <div class="customer-status-item remaining"><span>남은 시간</span><b id="customerRemainingText">${safeText(remaining)}</b></div>
           <div class="customer-status-item"><span>도착 예정</span><b id="customerEtaText">${safeText(eta)}</b></div>
           <div class="customer-status-item"><span>정차·하차 예상</span><b id="customerDwellText">${safeText(dwell)}</b></div>
         </div>
-        <button class="customer-vehicle-target" type="button" data-customer-route="true"><strong>${safeText(vehicle.plate)}</strong><span>배송 경로 표시 중</span></button>
+        ${shipments.map((shipment, i) => {
+          const targetVehicle = shipmentVehicle(shipment);
+          const stop = customerStop(targetVehicle, shipment.stopNo);
+          return `<button class="customer-vehicle-target" type="button" data-customer-route="true"><strong>${safeText(targetVehicle.plate)}</strong><span>${i + 1}. ${safeText(shipment.destinationName || order.destinationName || stop?.name || "배송지")} 배송 경로 표시 중</span></button>`;
+        }).join("")}
         <div class="customer-cargo"><div class="customer-cargo-title">배송 품목</div>
-          ${CUSTOMER_DELIVERY_DEMO.cargo.map((item) => `<div class="customer-cargo-row"><span>${safeText(item.name)}</span><b>${safeText(item.qty)}</b></div>`).join("")}
+          ${orderCargo(order).map((item) => {
+            const targetVehicle = shipmentVehicle({ ...order, ...item });
+            return `<div class="customer-cargo-row"><span>${safeText(item.name)} · ${safeText(targetVehicle.plate)}</span><b>${safeText(item.qty)}</b></div>`;
+          }).join("")}
         </div>
         <p class="customer-hint">현재 차량 위치에서 고객 배송지까지의 경로가 바로 표시됩니다.</p>`;
+      card.querySelectorAll("[data-order-no]").forEach((button) => button.addEventListener("click", () => {
+        state.selectedCustomerOrderNo = button.dataset.orderNo;
+        const next = selectedCustomerOrder();
+        state.selectedVehicleId = next.vehicleId;
+        state.selectedStopNo = next.stopNo;
+        renderCustomerOrderCard();
+        hydrateRoutes();
+        updateMapData();
+      }));
       card.querySelector("[data-customer-route]")?.addEventListener("click", () => showCustomerRouteToDestination("customer-card"));
     }
     function renderCustomerMode() {
       document.body.classList.add("customer-delivery-demo");
-      document.querySelector(".top h1").textContent = "Clever - 배송 조회 Demo";
+      document.querySelector(".top h1").textContent = CUSTOMER_INQUIRY_MODE ? "Clever - 고객사 Demo" : "Clever - 배송 조회 Demo";
       document.querySelector(".map-card").hidden = false;
       document.querySelector(".side").hidden = true;
       $("pageContent").hidden = true;
@@ -1637,25 +1713,27 @@
       state.customerRouteRequestedAt = simulatedNowMs();
       updateMapData();
       renderCustomerOrderCard();
-      const vehicle = customerVehicle();
+      const order = selectedCustomerOrder();
+      const vehicle = customerVehicle(order);
       const coord = vehiclePosition(vehicle);
       if (coord) easeMap({ center: coord, zoom: 13.9, duration: 520, essential: true });
-      logApi("POST", `${CLEVER_SERVER}/demo/customer-route`, { orderNo: CUSTOMER_DELIVERY_DEMO.orderNo, vehicle: vehicle.id, reason }, "info");
+      logApi("POST", `${CLEVER_SERVER}/demo/customer-route`, { orderNo: order.orderNo, vehicle: vehicle.id, reason }, "info");
       return true;
     }
     function focusCustomerDestination(reason = "destination") {
       if (!CUSTOMER_DELIVERY_MODE) return false;
-      const coord = customerDestinationCoord();
+      const coord = customerDestinationCoord(orderShipments()[0] || selectedCustomerOrder());
       if (coord) easeMap({ center: coord, zoom: DESTINATION_FOCUS_ZOOM, duration: 520, essential: true });
-      logApi("POST", `${CLEVER_SERVER}/demo/customer-destination-focus`, { orderNo: CUSTOMER_DELIVERY_DEMO.orderNo, reason }, "info");
+      logApi("POST", `${CLEVER_SERVER}/demo/customer-destination-focus`, { orderNo: selectedCustomerOrder().orderNo, reason }, "info");
       return true;
     }
     function prepareCustomerMode() {
       if (!CUSTOMER_DELIVERY_MODE) return;
       state.activeTab = "customer";
-      state.selectedVehicleId = CUSTOMER_DELIVERY_DEMO.vehicleId;
-      state.selectedStopNo = CUSTOMER_DELIVERY_DEMO.stopNo;
-      state.selectedCourierId = courierFor(customerVehicle()).id;
+      const order = selectedCustomerOrder();
+      state.selectedVehicleId = order.vehicleId;
+      state.selectedStopNo = order.stopNo;
+      state.selectedCourierId = courierFor(customerVehicle(order)).id;
       state.spotlightVehicleId = "";
       state.trackingVehicleId = "";
       state.driverProfileVisible = false;
@@ -2146,7 +2224,8 @@
           <section class="page-panel wide">
             <div class="tab-line"><span>배송 조회 Demo</span><span class="chip mini">고객 화면</span></div>
             <table class="page-table"><tbody>
-              <tr><th>바로가기</th><td><a class="btn primary" href="index.html?demo=delivery-inquiry">배송조회 Demo로 이동</a></td></tr>
+              <tr><th>고객사</th><td><a class="btn primary" href="index.html?demo=customer-inquiry">고객사 Demo로 이동</a></td></tr>
+              <tr><th>Order</th><td><a class="btn primary" href="index.html?demo=delivery-inquiry">Order 배송조회 Demo로 이동</a></td></tr>
             </tbody></table>
           </section>
         </div>`, "", "dynamic-page settings-page");
@@ -2578,7 +2657,7 @@
       return result;
     }
     async function hydrateRoutes() {
-      const routeVehicles = CUSTOMER_DELIVERY_MODE ? [customerVehicle()] : vehicles;
+      const routeVehicles = CUSTOMER_DELIVERY_MODE ? orderShipments().map(shipmentVehicle).filter((vehicle, i, list) => vehicle && list.findIndex((item) => item.id === vehicle.id) === i) : vehicles;
       const groups = routeVehicles.reduce((acc, vehicle) => {
         const key = routeWaypoints(vehicle).map((coord) => coord.join(",")).join(";");
         (acc[key] ||= []).push(vehicle);
@@ -3102,9 +3181,10 @@
       state.customerRouteVisible = CUSTOMER_DELIVERY_MODE;
       applyAllScenarios(Date.now(), true);
       if (CUSTOMER_DELIVERY_MODE) {
-        state.selectedVehicleId = CUSTOMER_DELIVERY_DEMO.vehicleId;
-        state.selectedCourierId = courierFor(customerVehicle()).id;
-        state.selectedStopNo = CUSTOMER_DELIVERY_DEMO.stopNo;
+        const order = selectedCustomerOrder();
+        state.selectedVehicleId = order.vehicleId;
+        state.selectedCourierId = courierFor(customerVehicle(order)).id;
+        state.selectedStopNo = order.stopNo;
         state.trackingVehicleId = ""; state.spotlightVehicleId = ""; state.driverProfileVisible = false; state.lastTrackingAt = 0; state.lastTrackingSampleAt = 0;
         setRisk(false, false); renderCustomerMode(); updateMapData();
         return;
