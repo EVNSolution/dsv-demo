@@ -15,15 +15,15 @@ main { display:grid; gap:18px; justify-content:center; padding:18px; }
 .cover p { max-width:150mm; margin:10mm 0 0; color:#cfcfcf; font-size:14pt; line-height:1.65; }
 .cover .meta { position:absolute; top:14mm; left:18mm; right:18mm; display:flex; justify-content:space-between; font-size:9pt; font-weight:800; }
 .feature { display:grid; background:#f2f2f0; }
-.landscape .feature { grid-template-rows:66mm 1fr; padding:10mm; }
-.portrait .feature { grid-template-rows:84mm auto 1fr; padding:12mm; }
+.landscape .feature { grid-template-rows:auto minmax(0,1fr); padding:10mm; }
+.portrait .feature { grid-template-rows:auto auto 1fr; padding:12mm; }
 .copy { display:grid; background:#080808; color:#fff; }
-.landscape .copy { grid-template-columns:28mm 1fr 83mm; gap:10mm; align-items:start; padding:10mm 12mm; border-radius:7mm 7mm 0 0; }
-.portrait .copy { grid-template-columns:1fr; align-content:start; gap:4mm; padding:10mm 11mm; border-radius:7mm 7mm 0 0; }
+.landscape .copy { grid-template-columns:28mm 1fr 83mm; gap:8mm; align-items:start; padding:7mm 10mm; border-radius:7mm 7mm 0 0; }
+.portrait .copy { grid-template-columns:1fr; align-content:start; gap:2.5mm; padding:7mm 9mm; border-radius:7mm 7mm 0 0; }
 .copy .kicker { margin:1mm 0 0; }
 .copy h2 { margin:0; font-size:27pt; line-height:1.02; letter-spacing:-.05em; }
 .copy p { margin:0; color:#d0d0d0; font-size:10.5pt; line-height:1.55; }
-.portrait .copy h2 { font-size:25pt; }
+.portrait .copy h2 { font-size:23pt; }
 .portrait .copy p { font-size:10pt; }
 .visual { margin:0; overflow:hidden; background:#fff; }
 .landscape .visual { border-radius:0 0 7mm 7mm; }
