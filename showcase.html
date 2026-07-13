@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clever DSV — 배송 운영을 하나의 흐름으로</title>
+  <meta name="description" content="Clever DSV 배송 관제, 배차 업무, 배송 기록, 고객사 주문 조회 소개">
+  <style>
+    :root { color-scheme: light; font-family: Pretendard, "Apple SD Gothic Neo", system-ui, sans-serif; background:#e9e9e7; color:#111; }
+    * { box-sizing:border-box; }
+    body { margin:0; }
+    a { color:inherit; }
+    .topbar { position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:center; gap:20px; padding:18px clamp(20px,4vw,64px); background:rgba(233,233,231,.92); border-bottom:1px solid #cfcfcb; backdrop-filter:blur(16px); }
+    .brand { font-size:18px; font-weight:900; letter-spacing:-.04em; text-decoration:none; }
+    .actions { display:flex; gap:8px; }
+    .button { border:1px solid #bbb; border-radius:999px; padding:10px 16px; background:#fff; font:inherit; font-size:13px; font-weight:800; text-decoration:none; cursor:pointer; }
+    .button.primary { border-color:#111; background:#111; color:#fff; }
+    main { width:min(1520px, calc(100% - 40px)); margin:0 auto; padding:72px 0 100px; }
+    .intro { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr); gap:40px; align-items:end; padding:0 0 88px; }
+    .eyebrow { margin:0 0 18px; font-size:13px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { max-width:1050px; margin:0; font-size:clamp(46px,7vw,112px); line-height:.92; letter-spacing:-.07em; }
+    .intro p { margin:0; color:#444; font-size:clamp(17px,1.5vw,23px); line-height:1.6; letter-spacing:-.025em; }
+    .story { margin:0 0 96px; break-inside:avoid; }
+    .copy { display:grid; grid-template-columns:110px minmax(0,1.5fr) minmax(320px,.75fr); gap:28px; align-items:start; min-height:300px; padding:44px 48px; border-radius:32px 32px 0 0; background:#080808; color:#fff; }
+    .number { color:#858585; font-size:14px; font-weight:900; letter-spacing:.12em; }
+    h2 { margin:0; max-width:780px; font-size:clamp(36px,4vw,70px); line-height:1.02; letter-spacing:-.055em; }
+    .copy aside { display:grid; gap:22px; }
+    .summary { margin:0; color:#d5d5d5; font-size:17px; line-height:1.65; letter-spacing:-.02em; }
+    .facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:0; }
+    .facts div { padding-top:13px; border-top:1px solid #484848; }
+    .facts dt { color:#888; font-size:11px; font-weight:800; }
+    .facts dd { margin:5px 0 0; font-size:14px; font-weight:850; line-height:1.35; }
+    figure { margin:0; overflow:hidden; border-radius:0 0 32px 32px; background:#fff; box-shadow:0 24px 70px rgba(0,0,0,.13); }
+    figure img { display:block; width:100%; height:auto; }
+    figcaption { display:flex; justify-content:space-between; gap:24px; padding:16px 22px; border-top:1px solid #ddd; color:#555; font-size:12px; }
+    .closing { display:grid; grid-template-columns:1fr auto; gap:30px; align-items:end; padding:70px 0 0; border-top:1px solid #bdbdb9; }
+    .closing h2 { max-width:900px; }
+    .closing p { margin:14px 0 0; color:#555; line-height:1.7; }
+    @media (max-width:900px) {
+      main { width:min(100% - 24px,1520px); padding-top:42px; }
+      .intro { grid-template-columns:1fr; padding-bottom:54px; }
+      .copy { grid-template-columns:1fr; min-height:0; padding:30px 24px; border-radius:22px 22px 0 0; }
+      .number { order:-1; }
+      figure { border-radius:0 0 22px 22px; }
+      .closing { grid-template-columns:1fr; }
+      .topbar { padding:14px 16px; }
+      .actions .button:not(.primary) { display:none; }
+    }
+    @page { size:A4 landscape; margin:10mm; }
+    @media print {
+      :root, body { background:#fff; }
+      .topbar { display:none; }
+      main { width:100%; padding:0; }
+      .intro { min-height:180mm; padding:24mm 12mm; break-after:page; }
+      .story { margin:0; min-height:180mm; display:flex; flex-direction:column; justify-content:center; break-after:page; }
+      .copy { min-height:58mm; padding:10mm 12mm; border-radius:6mm 6mm 0 0; }
+      h2 { font-size:28pt; }
+      .summary { font-size:10pt; }
+      figure { border-radius:0 0 6mm 6mm; box-shadow:none; }
+      figcaption { display:none; }
+      .closing { min-height:180mm; padding:24mm 12mm; break-before:page; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="showcase.html">Clever DSV</a>
+    <nav class="actions" aria-label="소개 자료 작업">
+      <button class="button" type="button" onclick="window.print()">PDF로 저장</button>
+      <a class="button primary" href="index.html">라이브 데모 보기</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div>
+        <p class="eyebrow">Delivery Service Visibility</p>
+        <h1>배송 운영을<br>하나의 흐름으로.</h1>
+      </div>
+      <p>Clever DSV는 배차 담당자에게는 전체 운행 흐름을, 현장 담당자에게는 실행할 업무를, 고객사에는 주문별 배송 현황을 같은 데이터 구조로 보여주는 배송 운영 화면입니다.</p>
+    </section>
+
+    <article class="story">
+      <header class="copy">
+        <span class="number">01 / CONTROL</span>
+        <h2>차량과 배송 경로를<br>한눈에 관제합니다.</h2>
+        <aside>
+          <p class="summary">지도 위에서 운행 차량, 완료 구간, 현재 배송지와 다음 목적지를 함께 확인합니다. 차량을 선택하면 경로와 배송 순서가 즉시 연결되어 운영자가 상황을 놓치지 않습니다.</p>
+          <dl class="facts"><div><dt>핵심 정보</dt><dd>차량 · 경로 · ETA</dd></div><div><dt>사용자</dt><dd>관제 운영자</dd></div></dl>
+        </aside>
+      </header>
+      <figure>
+        <img src="assets/showcase/control.png" alt="Clever DSV 지도 기반 배송 관제 화면">
+        <figcaption><span>실시간 관제 화면</span><span>차량 선택 · 경로 진행 · 배송지 상태</span></figcaption>
+      </figure>
+    </article>
+
+    <article class="story">
+      <header class="copy">
+        <span class="number">02 / OPERATIONS</span>
+        <h2>배차부터 증빙까지<br>업무를 이어봅니다.</h2>
+        <aside>
+          <p class="summary">배송원 선택, 전체 타임라인, 주문 품목과 증빙 자료를 한 화면에 배치했습니다. 누가 어떤 주문을 수행하고 있으며 다음에 무엇을 확인해야 하는지 바로 판단할 수 있습니다.</p>
+          <dl class="facts"><div><dt>핵심 정보</dt><dd>배송원 · 타임라인</dd></div><div><dt>연결 정보</dt><dd>품목 · POD · 인수증</dd></div></dl>
+        </aside>
+      </header>
+      <figure>
+        <img src="assets/showcase/operations.png" alt="Clever DSV 배송 업무 및 주문 증빙 화면">
+        <figcaption><span>배송 실행 업무 화면</span><span>배차 · 배송 순서 · 주문 품목 · 증빙</span></figcaption>
+      </figure>
+    </article>
+
+    <article class="story">
+      <header class="copy">
+        <span class="number">03 / RECORDS</span>
+        <h2>현장의 맥락을<br>배송 기록으로 남깁니다.</h2>
+        <aside>
+          <p class="summary">완료 시각과 배송지, 차량, 문제 기록, 현장 팁을 함께 보존합니다. POD 이미지와 인수증, 거래명세표, 온도 기록까지 주문의 실행 결과를 한곳에서 추적합니다.</p>
+          <dl class="facts"><div><dt>핵심 정보</dt><dd>완료 · 이슈 · 현장 메모</dd></div><div><dt>증빙</dt><dd>POD · 인수증 · 온도</dd></div></dl>
+        </aside>
+      </header>
+      <figure>
+        <img src="assets/showcase/history.png" alt="Clever DSV 완료 배송 및 증빙 기록 화면">
+        <figcaption><span>배송 기록 화면</span><span>완료 이력 · 문제 기록 · 증빙 · 현장 메모</span></figcaption>
+      </figure>
+    </article>
+
+    <article class="story">
+      <header class="copy">
+        <span class="number">04 / CUSTOMER VIEW</span>
+        <h2>고객사는 주문별로<br>도착을 확인합니다.</h2>
+        <aside>
+          <p class="summary">고객사 전용 화면에서 주문, 배정 차량, 배송지 순서, 남은 시간과 도착 예정 범위를 확인합니다. 여러 차량으로 나뉜 주문도 주문번호를 중심으로 하나의 흐름처럼 보여줍니다.</p>
+          <dl class="facts"><div><dt>핵심 정보</dt><dd>주문 · 차량 · 도착 예정</dd></div><div><dt>사용자</dt><dd>화주 · 고객사 담당자</dd></div></dl>
+        </aside>
+      </header>
+      <figure>
+        <img src="assets/showcase/customer-orders.png" alt="Clever DSV 고객사 주문별 배송 조회 화면">
+        <figcaption><span>고객사 배송 조회 화면</span><span>주문별 차량 · 배송지 · ETA · 품목</span></figcaption>
+      </figure>
+    </article>
+
+    <section class="closing">
+      <div><p class="eyebrow">Clever DSV</p><h2>운영팀과 고객사가<br>같은 배송을 봅니다.</h2><p>본 페이지는 제품 화면을 활용한 소개 자료입니다. 라이브 데모에서는 지도와 각 업무 화면을 직접 확인할 수 있습니다.</p></div>
+      <a class="button primary" href="index.html">라이브 데모 시작</a>
+    </section>
+  </main>
+</body>
+</html>

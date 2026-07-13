@@ -33,7 +33,7 @@ jobs:
       - name: Prepare static artifact
         run: |
           mkdir -p dist
-          cp index.html README.md .nojekyll dist/
+          cp index.html showcase.html README.md .nojekyll dist/
           cp -R assets dist/
 
       - name: Upload Pages artifact

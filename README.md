@@ -5,6 +5,7 @@ DSV 배송 관제 흐름을 보여주는 정적 HTML 데모입니다.
 ## 바로 보기
 
 - 데모 페이지: https://evnsolution.github.io/dsv-demo/
+- 제품 소개: https://evnsolution.github.io/dsv-demo/showcase.html
 - 저장소: https://github.com/EVNSolution/dsv-demo
 
 ## 데모에 포함된 내용
